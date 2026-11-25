@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/mfd/hisilicon,pmic_ocp_modem.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Balong modem PMIC OCP rails
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  Lists the PMIC rails used by the Balong modem. OCP events on these rails
+  are forwarded to the modem over ICC before the generic AP PMIC policy is
+  applied.
+
+properties:
+  compatible:
+    const: hisilicon,pmic_ocp_modem
+
+patternProperties:
+  "^ldo[0-9]+$":
+    type: object
+
+    properties:
+      id:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: Modem-internal rail identifier.
+
+    required:
+      - id
+
+    additionalProperties: false
+
+required:
+  - compatible
+
+additionalProperties: false

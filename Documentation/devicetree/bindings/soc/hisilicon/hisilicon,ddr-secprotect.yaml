@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/soc/hisilicon/hisilicon,ddr-secprotect.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: HiSilicon DDR secure protection and DMSS FIQ reporting
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description: |
+  The secure monitor owns the DDR firewall.  Linux programs dynamic secure
+  regions through a descriptor placed in the BL31 shared memory window and
+  an SMC.  The DMSS reports violations through an FIQ and publishes the
+  source flag in the same shared window.
+
+properties:
+  compatible:
+    const: hisilicon,ddr_secprotect
+
+  reg:
+    maxItems: 1
+    description: DMSS register window.
+
+  interrupts:
+    maxItems: 1
+    description: DMSS FIQ, if wired as a normal interrupt.
+
+required:
+  - compatible
+  - reg
+
+additionalProperties: false

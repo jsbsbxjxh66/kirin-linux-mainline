@@ -1,0 +1,136 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/display/hisilicon/hisi-dpe.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+title: HiSilicon Hi3670 DPE (Display Processing Engine)
+
+description:
+  DPE is the display controller on HiSilicon Hi3670 (Kirin 970) SoC.
+  It grabs image data from memory, performs composition and post-processing,
+  generates RGB timing stream and transfers to DSI.
+
+properties:
+  compatible:
+    const: hisilicon,hi3670-dpe
+
+  reg:
+    minItems: 8
+    maxItems: 8
+    description: |
+      Register regions:
+        - DSS base (0xE8600000)
+        - PERI CRG (0xFFF35000)
+        - SCTRL (0xFFF0A000)
+        - PCTRL (0xE8A09000)
+        - NOC DSS (0xE86C0000)
+        - MMBUF CFG (0xFFF02000)
+        - PM Ctrl (0xFFF31000)
+        - Media CRG (0xE87FF000)
+
+  reg-names:
+    items:
+      - const: dss_base
+      - const: peri_crg
+      - const: sctrl
+      - const: pctrl
+      - const: noc_dss
+      - const: mmbuf_crg
+      - const: pmctrl
+      - const: media_crg
+
+  interrupts:
+    minItems: 1
+    maxItems: 4
+
+  interrupt-names:
+    minItems: 1
+    maxItems: 4
+
+  clocks:
+    minItems: 9
+    maxItems: 9
+
+  clock-names:
+    items:
+      - const: dss_axi_clk
+      - const: dss_pclk_dss_clk
+      - const: dss_pri_clk
+      - const: dss_pxl0_clk
+      - const: dss_mmbuf_clk
+      - const: dss_pclk_mmbuf
+      - const: dss_dphy0_ref_clk
+      - const: dss_dphy0_cfg_clk
+      - const: dss_pclk_dsi0_clk
+
+  resets:
+    maxItems: 1
+
+  port:
+    $ref: /schemas/graph.yaml#/$defs/port-base
+    unevaluatedProperties: false
+    description: Output port to the DSI controller.
+
+required:
+  - compatible
+  - reg
+  - reg-names
+  - interrupts
+  - clocks
+  - clock-names
+  - port
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/hi3670-clock.h>
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+
+    soc {
+        #address-cells = <2>;
+        #size-cells = <2>;
+
+        display-engine@e8600000 {
+            compatible = "hisilicon,hi3670-dpe";
+            reg = <0x0 0xe8600000 0x0 0xc0000>,   /* DSS base */
+                  <0x0 0xfff35000 0x0 0x1000>,     /* PERI CRG */
+                  <0x0 0xfff0a000 0x0 0x1000>,     /* SCTRL */
+                  <0x0 0xe8a09000 0x0 0x1000>,     /* PCTRL */
+                  <0x0 0xe86c0000 0x0 0x10000>,    /* NOC DSS */
+                  <0x0 0xfff02000 0x0 0x1000>,     /* MMBUF CFG */
+                  <0x0 0xfff31000 0x0 0x1000>,     /* PM Ctrl */
+                  <0x0 0xe87ff000 0x0 0x1000>;     /* Media CRG */
+            reg-names = "dss_base", "peri_crg", "sctrl", "pctrl",
+                        "noc_dss", "mmbuf_crg", "pmctrl", "media_crg";
+
+            clocks = <&media1_crg HI3670_ACLK_GATE_DSS>,
+                     <&media1_crg HI3670_PCLK_GATE_DSS>,
+                     <&media1_crg HI3670_CLK_GATE_EDC0>,
+                     <&media1_crg HI3670_CLK_GATE_LDI0>,
+                     <&media1_crg HI3670_CLK_GATE_DSS_AXI_MM>,
+                     <&media1_crg HI3670_PCLK_GATE_MMBUF_CFG>,
+                     <&crg_ctrl HI3670_CLK_GATE_TXDPHY0_REF>,
+                     <&crg_ctrl HI3670_CLK_GATE_TXDPHY0_CFG>,
+                     <&crg_ctrl HI3670_PCLK_GATE_DSI0>;
+            clock-names = "dss_axi_clk", "dss_pclk_dss_clk",
+                          "dss_pri_clk", "dss_pxl0_clk",
+                          "dss_mmbuf_clk", "dss_pclk_mmbuf",
+                          "dss_dphy0_ref_clk", "dss_dphy0_cfg_clk",
+                          "dss_pclk_dsi0_clk";
+
+            interrupts = <GIC_SPI 245 IRQ_TYPE_LEVEL_HIGH>;
+            interrupt-names = "dpe_pdp";
+
+            resets = <&media_ctrl 0x44>;
+
+            port {
+                endpoint {
+                };
+            };
+        };
+    };

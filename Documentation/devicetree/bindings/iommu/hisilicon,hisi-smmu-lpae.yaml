@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/iommu/hisilicon,hisi-smmu-lpae.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon LPAE SMMU page-table manager
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description: |
+  The SMMU hardware on Hisilicon Kirin SoCs is configured by the secure
+  firmware and by the consumer drivers, which program TTBR0 themselves.
+  The AP only owns the shared three-level page tables.  This node therefore
+  has no register range or interrupt.
+
+properties:
+  compatible:
+    const: hisi,hisi-smmu-lpae
+
+  "#iommu-cells":
+    const: 0
+    description:
+      The SMMU uses a single shared page table per consumer domain, so no
+      stream ID is encoded in the phandle.
+
+required:
+  - compatible
+  - "#iommu-cells"
+
+additionalProperties: false
+
+examples:
+  - |
+    smmu_lpae: iommu {
+        compatible = "hisi,hisi-smmu-lpae";
+        #iommu-cells = <0>;
+    };

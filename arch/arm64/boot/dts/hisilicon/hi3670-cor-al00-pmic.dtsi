@@ -1,0 +1,278 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * PMIC dts file for Honor Play (COR-AL00) with Hi6421v600 PMU
+ *
+ * Based on hikey970-pmic.dtsi. Uses mainline-compatible bindings.
+ * All 14 LDOs with register data extracted from sys-fdt.dtb.
+ *
+ * Copyright (C) 2024, Mainline port
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/spmi/spmi.h>
+
+/ {
+	soc {
+		spmi: spmi@fff24000 {
+			compatible = "hisilicon,kirin970-spmi-controller";
+			reg = <0x0 0xfff24000 0x0 0x1000>;
+			#address-cells = <2>;
+			#size-cells = <0>;
+			hisilicon,spmi-channel = <2>;
+
+			pmic: pmic@0 {
+				compatible = "hisilicon,hi6421-spmi";
+				reg = <0 SPMI_USID>;
+
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				interrupt-parent = <&gpio28>;
+				interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
+				gpios = <&gpio28 0 0>;
+
+				/*
+				 * PMIC audio clock gate (SSI byte register 0x3d,
+				 * bit 0).  The PMIC MFD creates this child from
+				 * the of_compatible cell; it must sit below the
+				 * PMIC so dev_get_drvdata(dev->parent) finds the
+				 * SPMI regmap.
+				 */
+				hi6421v600_clk: clock {
+					compatible = "hisilicon,hi6421v600-clk";
+					#clock-cells = <0>;
+					clocks = <&crg_ctrl HI3670_CLKIN_SYS>;
+					clock-output-names = "clk_pmuaudioclk";
+					hisilicon,clkgate = <0x3d 0>;
+					status = "okay";
+				};
+
+				/*
+				 * PMIC 32 kHz output B gate (SSI byte register
+				 * 0x3f, bit 0), fed from the 32.764 kHz
+				 * clkin_ref.  The Hi1102 connectivity driver
+				 * requests it by name ("clk_pmu32kb"), which the
+				 * clkdev alias registered by the clock driver
+				 * resolves.
+				 */
+				hi6421v600_clk32k: clock-32k {
+					compatible = "hisilicon,hi6421v600-clk";
+					#clock-cells = <0>;
+					clocks = <&crg_ctrl HI3670_CLKIN_REF>;
+					clock-output-names = "clk_pmu32kb";
+					hisilicon,clkgate = <0x3f 0>;
+					status = "okay";
+				};
+
+				/* Hi6421v600 coulomb counter (MFD cell) */
+				hi6421v600_coul: coul {
+					compatible = "hisilicon,hi6421v600-coul";
+					interrupt-parent = <&pmic>;
+					interrupts = <9 0>;
+					interrupt-names = "coulirq";
+					status = "okay";
+				};
+
+				/*
+				 * PMIC OCP/SCP and over-temperature monitor.
+				 * OTMP is the PMIC's last-resort 140 C trip; OCP
+				 * covers the buck/LDO rails.  Both are latched by
+				 * the PMIC and surfaced through the hi6421v600-irq
+				 * domain (OTMP = hwirq 0, OCP = hwirq 8).
+				 */
+				pmic_mntn: pmic-mntn {
+					compatible = "hisilicon,hi6421v600-mntn";
+					interrupt-parent = <&pmic>;
+					interrupts = <0 0>, <8 0>;
+					interrupt-names = "otmp", "ocp";
+
+					hisilicon,ocp-regs =
+						<0x214 0x215 0x216 0x217
+						 0x218 0x219 0x21a 0x21b>;
+					hisilicon,record-regs =
+						<0x222 0x223 0x224 0x225
+						 0x226 0x227 0x228 0x229
+						 0x22a 0x22b 0x22c 0x22d
+						 0x22e 0x22f 0x230>;
+
+					hisilicon,otmp-threshold-reg = <0x116 0x00 0x02>;
+					hisilicon,otmp-threshold-val = <0x03>;
+					hisilicon,otmp-hreset-pwrdown-flag;
+					hisilicon,otmp-hreset-pwrdown-reg = <0x241 0x00 0x01>;
+					hisilicon,otmp-hreset-pwrdown-val = <0x00>;
+
+					hisilicon,smpl-ctrl-en = <0x01>;
+					hisilicon,smpl-ctrl-en-reg = <0x242 0x00 0x01>;
+					hisilicon,smpl-ctrl-time = <0x02>;
+					hisilicon,smpl-ctrl-time-reg = <0x242 0x01 0x02>;
+
+					hisilicon,ocp-restart;
+					hisilicon,otmp-restart;
+					status = "okay";
+				};
+
+				/*
+				 * Power key.  The mainline hi65xx-powerkey driver
+				 * requires the "down", "up" and "hold 4s" IRQs;
+				 * the PMIC exposes a 6s hold instead, which is
+				 * the closest equivalent (used for KEY_RESTART).
+				 */
+				ponkey {
+					compatible = "hisilicon,hi6421v600-powerkey";
+					interrupt-parent = <&pmic>;
+					interrupts = <7 0>, <6 0>, <4 0>;
+					interrupt-names = "down", "up", "hold 4s";
+					status = "okay";
+				};
+
+				/* Hi6421v600 PMIC RTC (MFD cell) */
+				pmic_rtc: rtc {
+					compatible = "hisilicon,hi6421v600-rtc";
+					interrupt-parent = <&pmic>;
+					interrupts = <3 0>;
+					interrupt-names = "hisi-pmic-rtc";
+					hisilicon,pmic-rtc-base = <0x340>;
+					hisilicon,pmic-rtc-imr = <0x202>;
+					hisilicon,pmic-rtc-icr = <0x212>;
+					hisilicon,pmic-rtc-ib = <0x3>;
+					hisilicon,pmic-rtc-xo-thrshd-pwroff-val = <0xffff>;
+					status = "okay";
+
+					soc-rtc {
+						compatible = "hisilicon,soc-rtc";
+						soc-rtc-baseaddr = <0xfff04000>;
+						interrupt-parent = <&gic>;
+						interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
+					};
+				};
+
+				/* Hi6421v600 notification LED controller */
+				led-controller {
+					compatible = "hisilicon,hi6421v600-led";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					hisilicon,ctrl-reg = <0x12f>;
+					hisilicon,out-ctrl-reg = <0x133>;
+					status = "okay";
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_RED>;
+						function = LED_FUNCTION_STATUS;
+						hisilicon,max-current = <4>;
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_STATUS;
+						hisilicon,max-current = <0>;
+					};
+
+					led@2 {
+						reg = <2>;
+						color = <LED_COLOR_ID_BLUE>;
+						function = LED_FUNCTION_STATUS;
+						hisilicon,max-current = <2>;
+					};
+				};
+
+				regulators {
+					ldo3: ldo3 { /* HDMI */
+						regulator-name = "ldo3";
+						regulator-min-microvolt = <1500000>;
+						regulator-max-microvolt = <2000000>;
+						regulator-boot-on;
+					};
+
+					ldo4: ldo4 { /* 40 PIN */
+						regulator-name = "ldo4";
+						regulator-min-microvolt = <1725000>;
+						regulator-max-microvolt = <1900000>;
+					};
+
+					ldo9: ldo9 { /* SDCARD I/O */
+						regulator-name = "ldo9";
+						regulator-min-microvolt = <1750000>;
+						regulator-max-microvolt = <3300000>;
+					};
+
+					ldo13: ldo13 {
+						regulator-name = "ldo13";
+						regulator-min-microvolt = <2500000>;
+						regulator-max-microvolt = <3300000>;
+					};
+
+					ldo15: ldo15 { /* UFS */
+						regulator-name = "ldo15";
+						regulator-min-microvolt = <1800000>;
+						regulator-max-microvolt = <3000000>;
+						regulator-always-on;
+					};
+
+					ldo16: ldo16 { /* SD */
+						regulator-name = "ldo16";
+						regulator-min-microvolt = <1800000>;
+						regulator-max-microvolt = <3000000>;
+					};
+
+					ldo17: ldo17 { /* USB HUB */
+						regulator-name = "ldo17";
+						regulator-min-microvolt = <2500000>;
+						regulator-max-microvolt = <3300000>;
+					};
+
+					ldo19: ldo19 {
+						regulator-name = "ldo19";
+						regulator-min-microvolt = <950000>;
+						regulator-max-microvolt = <1200000>;
+					};
+
+					ldo20: ldo20 {
+						regulator-name = "ldo20";
+						regulator-min-microvolt = <950000>;
+						regulator-max-microvolt = <1200000>;
+					};
+
+					ldo21: ldo21 {
+						regulator-name = "ldo21";
+						regulator-min-microvolt = <1500000>;
+						regulator-max-microvolt = <2000000>;
+					};
+
+					ldo24: ldo24 {
+						regulator-name = "ldo24";
+						regulator-min-microvolt = <2500000>;
+						regulator-max-microvolt = <3300000>;
+						regulator-always-on;
+					};
+
+					ldo25: ldo25 {
+						regulator-name = "ldo25";
+						regulator-min-microvolt = <2500000>;
+						regulator-max-microvolt = <3300000>;
+					};
+
+					ldo32: ldo32 {
+						regulator-name = "ldo32";
+						regulator-min-microvolt = <950000>;
+						regulator-max-microvolt = <1200000>;
+					};
+
+					ldo33: ldo33 { /* PEX8606 */
+						regulator-name = "ldo33";
+						regulator-min-microvolt = <2500000>;
+						regulator-max-microvolt = <3300000>;
+					};
+
+					ldo34: ldo34 { /* GPS AUX IN VDD */
+						regulator-name = "ldo34";
+						regulator-min-microvolt = <2600000>;
+						regulator-max-microvolt = <3300000>;
+					};
+				};
+			};
+		};
+	};
+};

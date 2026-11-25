@@ -1,0 +1,99 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/input/touchscreen/syna,tcm-spi.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Synaptics Touch Controller Module (TCM) on SPI
+
+description:
+  Synaptics TCM touch controllers speak the TCM message protocol over SPI.
+  Ramless parts only run the F$35 microbootloader after reset and need the
+  host to download the application firmware into PMEM before touch reports
+  are available; "syna,firmware-name" names that image.
+
+maintainers:
+  - "Mainline port for Hi3670 COR-AL00 <noreply@example.com>"
+
+allOf:
+  - $ref: touchscreen.yaml#
+  - $ref: /schemas/spi/spi-peripheral-props.yaml#
+
+properties:
+  compatible:
+    const: syna,tcm-spi
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  reset-gpios:
+    maxItems: 1
+    description:
+      Reset line, active low unless the board wires it differently.
+
+  spi-cpol: true
+  spi-cpha: true
+
+  vdd-supply: true
+
+  vddio-supply: true
+
+  syna,firmware-name:
+    description:
+      Firmware image to load into the controller's PMEM, relative to the
+      firmware search path.  For the COR-AL00 panel this is
+      "ts/corn_synaptics_tcm_corn69130.img".
+    $ref: /schemas/types.yaml#/definitions/string
+
+  syna,max-objects:
+    description: Maximum number of concurrent touch objects.
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 1
+    maximum: 10
+    default: 10
+
+  syna,reset-active-ms:
+    description: Time the controller is held in reset.
+    default: 20
+
+  syna,reset-delay-ms:
+    description: Time to wait after releasing reset before talking to the chip.
+    default: 200
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - syna,firmware-name
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/gpio/gpio.h>
+    #include <dt-bindings/interrupt-controller/irq.h>
+
+    spi {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        touchscreen@0 {
+            compatible = "syna,tcm-spi";
+            reg = <0>;
+            spi-max-frequency = <10000000>;
+            spi-cpol;
+            spi-cpha;
+            interrupt-parent = <&gpio26>;
+            interrupts = <4 IRQ_TYPE_LEVEL_LOW>;
+            reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+            touchscreen-size-x = <1080>;
+            touchscreen-size-y = <2340>;
+            syna,max-objects = <10>;
+            syna,reset-active-ms = <20>;
+            syna,reset-delay-ms = <200>;
+            syna,firmware-name = "ts/corn_synaptics_tcm_corn69130.img";
+        };
+    };

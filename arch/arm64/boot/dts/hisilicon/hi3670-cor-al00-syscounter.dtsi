@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * HiSilicon Kirin 970 always-on system counter.
+ */
+
+/ {
+	syscounter@fff08000 {
+		compatible = "hisilicon,syscounter-driver";
+		reg = <0x0 0xfff08000 0x0 0x2000>;
+		clock-rate = <0x0 0x1d4c00>;
+		sync-interval = <0x36ee80>;
+	};
+};

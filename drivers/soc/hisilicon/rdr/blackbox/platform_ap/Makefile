@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0
+ccflags-y += -Wall
+ccflags-y += -Idrivers/tee/hisilicon
+
+obj-y += rdr_hisi_ap_adapter.o rdr_hisi_ap_ringbuffer.o rdr_hisi_ap_hook.o rdr_hisi_ap_mntn.o
+obj-y += rdr_hisi_ap_subtype.o rdr_hisi_ap_cleartext.o hisi_pstore.o

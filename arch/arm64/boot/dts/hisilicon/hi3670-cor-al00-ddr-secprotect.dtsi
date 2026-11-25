@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * HiSilicon Kirin 970 DDR secure protection.
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	ddr_secprotect: ddr@fffc0000 {
+		compatible = "hisilicon,ddr_secprotect";
+		reg = <0x0 0xfffc0000 0x0 0x20000>;
+		interrupts = <GIC_SPI 131 IRQ_TYPE_LEVEL_HIGH>;
+	};
+};

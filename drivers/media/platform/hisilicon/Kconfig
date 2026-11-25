@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+comment "Hisilicon media platform drivers"
+
+source "drivers/media/platform/hisilicon/jpu/Kconfig"
+source "drivers/media/platform/hisilicon/venc/Kconfig"

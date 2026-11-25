@@ -1,0 +1,1007 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Pinctrl dts file for Honor Play (COR-AL00)
+ *
+ * Extracted from sys-fdt.dtb on device.
+ * Uses pinctrl-single driver with 4 controllers:
+ *   pmx0:  0xe896c000 (GPIO0-9, most peripherals)
+ *   pmx1:  0xfff11000 (GPIO144-231, secondary)
+ *   pmx5:  0xfc182000 (GPIO128-137, SDIO/WiFi)
+ *   pmx7:  0xff37e000 (GPIO160-171, SD card)
+ *
+ * Copyright (C) 2024, Mainline port
+ */
+
+#include <dt-bindings/pinctrl/hisi.h>
+
+/ {
+	soc {
+		range: gpio-range {
+			#pinctrl-single,gpio-range-cells = <3>;
+		};
+
+		/* ============================================================
+		 * pmx0: GPIO0-9 function mux (0xe896c000)
+		 * Covers: UART0/2/4/5/6, I2C3/4/6, SPI1, Audio, NFC
+		 * ============================================================ */
+		pmx0: pinmux@e896c000 {
+			compatible = "pinctrl-single";
+			reg = <0x0 0xe896c000 0x0 0x72c>;
+			#pinctrl-cells = <1>;
+			#gpio-range-cells = <0x3>;
+			pinctrl-single,register-width = <0x20>;
+			pinctrl-single,function-mask = <0x7>;
+			pinctrl-single,gpio-range = <&range 0 82 0>;
+
+			/*
+			 * Touch reset TP_RST_N = GPIO_015.  Retail places
+			 * these groups on this controller (pinmux@e896c000),
+			 * *not* on pmx1 where 0x71c is GPIO_216.
+			 */
+			gpio015_pmx_func: gpio015-pins {
+				pinctrl-single,pins = <
+					0x71c MUX_M0 /* GPIO_015 TP_RST_N */
+				>;
+			};
+
+			gpio015_pmx_idle: gpio015-pins-idle {
+				pinctrl-single,pins = <
+					0x71c MUX_M0
+				>;
+			};
+
+			/* UART0: GPIO35(RX,M0) GPIO36(TX,M0) */
+			uart0_pmx_func: uart0-pins {
+				pinctrl-single,pins = <
+					0x054 MUX_M0 /* UART0_RXD */
+					0x058 MUX_M0 /* UART0_TXD */
+				>;
+			};
+
+			/* UART2: GPIO176(RX,M2) GPIO177(TX,M2) GPIO178(CTS,M2) GPIO179(RTS,M2) */
+			uart2_pmx_func: uart2-pins {
+				pinctrl-single,pins = <
+					0x700 MUX_M2 /* UART2_CTS_N */
+					0x704 MUX_M2 /* UART2_RTS_N */
+					0x708 MUX_M2 /* UART2_RXD */
+					0x70c MUX_M2 /* UART2_TXD */
+				>;
+			};
+
+			/* UART3: GPIO40(CTS,M1) GPIO41(RTS,M1) GPIO42(RX,M1) GPIO43(TX,M1) */
+			uart3_pmx_func: uart3-pins {
+				pinctrl-single,pins = <
+					0x064 MUX_M1 /* UART3_CTS_N */
+					0x068 MUX_M1 /* UART3_RTS_N */
+					0x06c MUX_M1 /* UART3_RXD */
+					0x070 MUX_M1 /* UART3_TXD */
+				>;
+			};
+
+			/* UART4 (BT): GPIO44(CTS,M1) GPIO45(RTS,M1) GPIO46(RX,M1) GPIO47(TX,M1) */
+			uart4_pmx_func: uart4-pins {
+				pinctrl-single,pins = <
+					0x074 MUX_M1 /* UART4_CTS_N */
+					0x078 MUX_M1 /* UART4_RTS_N */
+					0x07c MUX_M1 /* UART4_RXD */
+					0x080 MUX_M1 /* UART4_TXD */
+				>;
+			};
+
+			/* UART5: GPIO38(CTS,M1) GPIO39(RTS,M1) GPIO??(RX,M1) GPIO??(TX,M1) */
+			uart5_pmx_func: uart5-pins {
+				pinctrl-single,pins = <
+					0x064 MUX_M1 /* UART5_CTS_N */
+					0x068 MUX_M1 /* UART5_RTS_N */
+					0x06c MUX_M1 /* UART5_RXD */
+					0x070 MUX_M1 /* UART5_TXD */
+				>;
+			};
+
+			/* UART6 (Console): GPIO37(RX,M1) GPIO38(TX,M1) */
+			uart6_pmx_func: uart6-pins {
+				pinctrl-single,pins = <
+					0x05c MUX_M1 /* UART6_RXD */
+					0x060 MUX_M1 /* UART6_TXD */
+				>;
+			};
+
+			/* I2C3: GPIO8(SCL,M1) GPIO9(SDA,M1) */
+			i2c3_pmx_func: i2c3-pins {
+				pinctrl-single,pins = <
+					0x010 MUX_M1 /* I2C3_SCL */
+					0x014 MUX_M1 /* I2C3_SDA */
+				>;
+			};
+
+			/* I2C4: GPIO26(SCL,M1) GPIO27(SDA,M1) */
+			i2c4_pmx_func: i2c4-pins {
+				pinctrl-single,pins = <
+					0x03c MUX_M1 /* I2C4_SCL */
+					0x040 MUX_M1 /* I2C4_SDA */
+				>;
+			};
+
+			/* I2C0: GPIO0(SCL,M1) GPIO1(SDA,M1) */
+			i2c0_pmx_func: i2c0-pins {
+				pinctrl-single,pins = <
+					0x000 MUX_M1 /* I2C0_SCL */
+					0x004 MUX_M1 /* I2C0_SDA */
+				>;
+			};
+
+			/* I2C2: GPIO4(SCL,M1) GPIO5(SDA,M1) */
+			i2c2_pmx_func: i2c2-pins {
+				pinctrl-single,pins = <
+					0x008 MUX_M1 /* I2C2_SCL */
+					0x00c MUX_M1 /* I2C2_SDA */
+				>;
+			};
+
+			/* I2C6: GPIO52(SCL,M1) GPIO53(SDA,M1) */
+			i2c6_pmx_func: i2c6-pins {
+				pinctrl-single,pins = <
+					0x0d0 MUX_M1 /* I2C6_SCL */
+					0x0d4 MUX_M1 /* I2C6_SDA */
+				>;
+			};
+
+			/* SPI1: GPIO39(CLK,M0) GPIO40(CS,M0) GPIO41(MOSI,M0) GPIO42(MISO,M0) */
+			spi1_pmx_func: spi1-pins {
+				pinctrl-single,pins = <
+					0x09c MUX_M0 /* SPI1_CLK */
+					0x0a0 MUX_M0 /* SPI1_CS_N */
+					0x0a4 MUX_M0 /* SPI1_MOSI */
+					0x0a8 MUX_M0 /* SPI1_MISO */
+				>;
+			};
+
+			/*
+			 * Hi1102 SDIO-side pins GPIO_052/053/054 (retail
+			 * sys-fdt: gpio052/053/054_pmx_func, pmx0 offsets
+			 * 0x94/0x98/0x9c, mode 0).
+			 */
+			gpio052_pmx_func: gpio052-pins {
+				pinctrl-single,pins = <
+					0x94 0x00	/* GPIO_052 */
+				>;
+			};
+
+			gpio053_pmx_func: gpio053-pins {
+				pinctrl-single,pins = <
+					0x98 0x00	/* GPIO_053 */
+				>;
+			};
+
+			gpio054_pmx_func: gpio054-pins {
+				pinctrl-single,pins = <
+					0x9c 0x00	/* GPIO_054 */
+				>;
+			};
+
+			gpio052_pmx_idle: gpio052-pins-idle {
+				pinctrl-single,pins = <
+					0x94 0x00
+				>;
+			};
+
+			gpio053_pmx_idle: gpio053-pins-idle {
+				pinctrl-single,pins = <
+					0x98 0x00
+				>;
+			};
+
+			gpio054_pmx_idle: gpio054-pins-idle {
+				pinctrl-single,pins = <
+					0x9c 0x00
+				>;
+			};
+
+			/*
+			 * GPIO_005 GNSS reference output (retail sys-fdt:
+			 * gpio005_pmx_func, offset 0x0c, mode 1).
+			 */
+			gpio005_pmx_func: gpio005-pins {
+				pinctrl-single,pins = <
+					0x0c 0x01	/* GPS_REF_OUT */
+				>;
+			};
+
+			gpio005_pmx_idle: gpio005-pins-idle {
+				pinctrl-single,pins = <
+					0x0c 0x01
+				>;
+			};
+
+			/* GPS */
+			gps_pmx_func: gps-pins {
+				pinctrl-single,pins = <
+					0x014 MUX_M0 /* GPS_RXD */
+					0x010 MUX_M0 /* GPS_TXD */
+				>;
+			};
+		};
+
+		/* ============================================================
+		 * pmx1: GPIO144-231 function mux (0xfff11000)
+		 * Covers: SPI3, I2C1/7, DSI, USB, PCIe
+		 * ============================================================ */
+		pmx1: pinmux@fff11000 {
+			compatible = "pinctrl-single";
+			reg = <0x0 0xfff11000 0x0 0x73c>;
+			#pinctrl-cells = <1>;
+			#gpio-range-cells = <0x3>;
+			pinctrl-single,register-width = <0x20>;
+			pinctrl-single,function-mask = <0x7>;
+			/* pin base=144, nr pins=46, gpio function=0 */
+			pinctrl-single,gpio-range = <&range 144 46 0>;
+
+			/* I2C1: GPIO188(SCL,M1) GPIO189(SDA,M1) */
+			i2c1_pmx_func: i2c1-pins {
+				pinctrl-single,pins = <
+					0x028 MUX_M1 /* I2C1_SCL, GPIO188 */
+					0x02c MUX_M1 /* I2C1_SDA, GPIO189 */
+				>;
+			};
+
+			/* SLIMbus: GPIO192(CLK,M1) GPIO193(DATA,M1) */
+			slimbus_pmx_func: slimbus-pmx-pins {
+				pinctrl-single,pins = <
+					0x038 MUX_M1 /* GPIO192 SLIMBUS_CLK */
+					0x03c MUX_M1 /* GPIO193 SLIMBUS_DATA */
+				>;
+			};
+
+			slimbus_pmx_idle: slimbus-pmx-pins-idle {
+				pinctrl-single,pins = <
+					0x038 MUX_M1 /* GPIO192 SLIMBUS_CLK */
+					0x03c MUX_M1 /* GPIO193 SLIMBUS_DATA */
+				>;
+			};
+
+			/* Codec SSI register bus: GPIO203(M1) */
+			codec_ssi_pmx_func: codec-ssi-pmx-pins {
+				pinctrl-single,pins = <
+					0x064 MUX_M1 /* GPIO203 CODEC_SSI */
+				>;
+			};
+
+			codec_ssi_pmx_idle: codec-ssi-pmx-pins-idle {
+				pinctrl-single,pins = <
+					0x064 MUX_M1 /* GPIO203 CODEC_SSI */
+				>;
+			};
+
+			/* Codec interrupt: GPIO148, GPIO function */
+			codec_irq_pmx_func: codec-irq-pmx-pins {
+				pinctrl-single,pins = <
+					0xa8 MUX_M0 /* GPIO148 CODEC_IRQ */
+				>;
+			};
+
+			codec_irq_pmx_idle: codec-irq-pmx-pins-idle {
+				pinctrl-single,pins = <
+					0xa8 MUX_M0 /* GPIO148 CODEC_IRQ */
+				>;
+			};
+
+			/* I2C7: GPIO232(SCL,M1) GPIO233(SDA,M1) */
+			i2c7_pmx_func: i2c7-pins {
+				pinctrl-single,pins = <
+					0x128 MUX_M1 /* I2C7_SCL */
+					0x12c MUX_M1 /* I2C7_SDA */
+				>;
+			};
+
+			/*
+			 * SPI3 (Touch) - three-wire: GPIO144(CLK), GPIO145(CS),
+			 * GPIO146(DATA), all muxed to M1 (retail
+			 * gpio144/145/146_pmx_func, pmx1 offsets
+			 * 0x72c/0x730/0x734).
+			 */
+			spi3_pmx_func: spi3-pins {
+				pinctrl-single,pins = <
+					0x72c MUX_M1 /* SPI3_CLK,  GPIO144 */
+					0x730 MUX_M1 /* SPI3_CS_N, GPIO145 */
+					0x734 MUX_M1 /* SPI3_DATA, GPIO146 */
+				>;
+			};
+
+			/* Touch CS: GPIO147 / SPI3_CS0_N stays a GPIO (software CS) */
+			spi3_cs_pmx_func: spi3-cs-pins {
+				pinctrl-single,pins = <
+					0x738 MUX_M0 /* GPIO_147 TP_SPI3_CS0_N */
+				>;
+			};
+
+			spi3_pmx_idle: spi3-pins-idle {
+				pinctrl-single,pins = <
+					0x72c MUX_M0 /* SPI3_CLK  -> GPIO */
+					0x730 MUX_M1
+					0x734 MUX_M1
+				>;
+			};
+
+			/* Touch panel IRQ (GPIO212) */
+			gpio212_pmx_func: gpio212-pins {
+				pinctrl-single,pins = <
+					0x70c MUX_M0 /* GPIO_212 TP_INT_N */
+				>;
+			};
+
+			gpio212_pmx_idle: gpio212-pins-idle {
+				pinctrl-single,pins = <
+					0x70c MUX_M0
+				>;
+			};
+
+			/* Fingerprint FPC2050: GPIO210(IRQ) GPIO211(RST) GPIO216(CS) */
+			fingerprint_pmx_func: fingerprint-pins {
+				pinctrl-single,pins = <
+					0x704 MUX_M0 /* GPIO_210 irq */
+					0x708 MUX_M0 /* GPIO_211 reset */
+					0x71c MUX_M0 /* GPIO_216 cs */
+				>;
+			};
+
+			/*
+			 * Backlight PWM.  The vendor muxes GPIO184 and GPIO185
+			 * to the BLPWM block (IOMG_003 = BLPWM_CABC,
+			 * IOMG_004 = BLPWM_BL per hisi_blpwm.c's comment).
+			 * Both live on the pmx1 controller (0xfff11000) at
+			 * offsets 0x018 and 0x01c, and the vendor's func value
+			 * is MUX_M1 for both.
+			 *
+			 * Their pinconf (bias/drive/slew) lives on the separate
+			 * pinconf controller at 0xfff11800, offsets 0x044 and
+			 * 0x048 - see blpwm_cfg_func below.
+			 */
+			blpwm_pmx_func: blpwm-pins {
+				pinctrl-single,pins = <
+					0x018 MUX_M1 /* GPIO184 -> BLPWM */
+					0x01c MUX_M1 /* GPIO185 -> BLPWM */
+				>;
+			};
+
+			blpwm_pmx_idle: blpwm-pins-idle {
+				pinctrl-single,pins = <
+					0x018 MUX_M0 /* GPIO184 */
+					0x01c MUX_M1 /* GPIO185 */
+				>;
+			};
+
+			/*
+				 * Volume keys. GPIO230 (down) / GPIO231 (up) are pmx1 pins: the
+				 * auto-gen table (hisi_gpio_auto_gen.h) puts both on iomg base
+				 * 0xFFF11000 at offsets 0x0A0 / 0x0A4, and sys-fdt.dts's
+				 * hisi_gpio_key binds only the pinconf (pull) handles, relying on
+				 * gpio28's gpio-ranges (<&pmx1 1 35 7>) to auto-mux them to GPIO.
+				 * MUX_M0 selects the GPIO function; writing these offsets in pmx0
+				 * instead would mux GPIO_055/GPIO_056, two unrelated pins.
+			 */
+			voldn_pmx_func: voldn-pins {
+				pinctrl-single,pins = <
+					0x0a0 MUX_M0 /* GPIO230 volume down */
+				>;
+			};
+
+			volup_pmx_func: volup-pins {
+				pinctrl-single,pins = <
+					0x0a4 MUX_M0 /* GPIO231 volume up */
+				>;
+			};
+
+			voldn_pmx_idle: voldn-pins-idle {
+				pinctrl-single,pins = <
+					0x0a0 MUX_M0 /* GPIO230 */
+				>;
+			};
+
+			volup_pmx_idle: volup-pins-idle {
+				pinctrl-single,pins = <
+					0x0a4 MUX_M0 /* GPIO231 */
+				>;
+			};
+		};
+
+		/* ============================================================
+		 * pmx2: GPIO0-9 pin config (0xe896c800)
+		 * Bias/drive configuration for GPIO0-9
+		 * ============================================================ */
+		pmx2: pinconf@e896c800 {
+			compatible = "pinconf-single";
+			reg = <0x0 0xe896c800 0x0 0x72c>;
+			pinctrl-single,register-width = <0x20>;
+
+			/* Touch reset TP_RST_N = GPIO_015 (pinconf@e896c800) */
+			gpio015_cfg_func: gpio015-cfg-pins {
+				pinctrl-single,pins = <
+					0x71c 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			gpio015_cfg_idle: gpio015-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x71c 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			/* UART6 RX/TX config */
+			uart6_cfg_func: uart6-cfg-pins {
+				pinctrl-single,pins = <
+					0x05c 0x10 /* UART6_RXD: pullup, drive 0x10 */
+					0x060 0x10 /* UART6_TXD: pullup, drive 0x10 */
+				>;
+			};
+
+			uart6_cfg_idle: uart6-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x05c 0x10 /* UART6_RXD */
+					0x060 0x10 /* UART6_TXD */
+				>;
+			};
+
+			/* UART0 RX/TX config */
+			uart0_cfg_func: uart0-cfg-pins {
+				pinctrl-single,pins = <
+					0x054 0x00 /* UART0_RXD */
+					0x058 0x10 /* UART0_TXD */
+				>;
+			};
+
+			uart0_cfg_idle: uart0-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x054 0x00 /* UART0_RXD */
+					0x058 0x10 /* UART0_TXD */
+				>;
+			};
+
+			/* UART2 config */
+			uart2_cfg_func: uart2-cfg-pins {
+				pinctrl-single,pins = <
+					0x700 0x00
+					0x704 0x00
+					0x708 0x00
+					0x70c 0x00
+				>;
+			};
+
+			/* UART4 (BT) config */
+			uart4_cfg_func: uart4-cfg-pins {
+				pinctrl-single,pins = <
+					0x074 0x00
+					0x078 0x00
+					0x07c 0x00
+					0x080 0x00
+				>;
+			};
+
+			/* UART3 config */
+			uart3_cfg_func: uart3-cfg-pins {
+				pinctrl-single,pins = <
+					0x064 0x00
+					0x068 0x00
+					0x06c 0x00
+					0x070 0x00
+				>;
+			};
+
+			/* UART5 config */
+			uart5_cfg_func: uart5-cfg-pins {
+				pinctrl-single,pins = <
+					0x064 0x00
+					0x068 0x00
+					0x06c 0x00
+					0x070 0x00
+				>;
+			};
+
+			/* I2C0 config */
+			i2c0_cfg_func: i2c0-cfg-pins {
+				pinctrl-single,pins = <
+					0x000 0x00 /* I2C0_SCL */
+					0x004 0x00 /* I2C0_SDA */
+				>;
+			};
+
+			/* I2C2 config */
+			i2c2_cfg_func: i2c2-cfg-pins {
+				pinctrl-single,pins = <
+					0x008 0x00 /* I2C2_SCL */
+					0x00c 0x00 /* I2C2_SDA */
+				>;
+			};
+
+			/* I2C3 config */
+			i2c3_cfg_func: i2c3-cfg-pins {
+				pinctrl-single,pins = <
+					0x010 0x00 /* I2C3_SCL */
+					0x014 0x00 /* I2C3_SDA */
+				>;
+			};
+
+			/* I2C4 config */
+			i2c4_cfg_func: i2c4-cfg-pins {
+				pinctrl-single,pins = <
+					0x03c 0x20 /* I2C4_SCL */
+					0x040 0x20 /* I2C4_SDA */
+				>;
+			};
+
+			/* I2C6 config */
+			i2c6_cfg_func: i2c6-cfg-pins {
+				pinctrl-single,pins = <
+					0x0d0 0x20
+					0x0d4 0x20
+				>;
+			};
+
+			/* SPI1 config */
+			spi1_cfg_func: spi1-cfg-pins {
+				pinctrl-single,pins = <
+					0x09c 0x00
+					0x0a0 0x00
+					0x0a4 0x00
+					0x0a8 0x00
+				>;
+			};
+
+			/*
+			 * Hi1102 SDIO-side pins electrical config (retail
+			 * sys-fdt: gpio052/053/054_cfg_func, pinconf
+			 * offsets 0x98/0x9c/0xa0, pull-down + drive 0x00).
+			 */
+			gpio052_cfg_func: gpio052-cfg-pins {
+				pinctrl-single,pins = <
+					0x98 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			gpio053_cfg_func: gpio053-cfg-pins {
+				pinctrl-single,pins = <
+					0x9c 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			gpio054_cfg_func: gpio054-cfg-pins {
+				pinctrl-single,pins = <
+					0xa0 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			gpio052_cfg_idle: gpio052-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x98 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			gpio053_cfg_idle: gpio053-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x9c 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			gpio054_cfg_idle: gpio054-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0xa0 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			/*
+			 * GPIO_005 GNSS reference output electrical config
+			 * (retail sys-fdt: gpio005_cfg_func/idle, identical
+			 * values, offset 0x10 in pinconf@e896c800).
+			 */
+			gpio005_cfg_func: gpio005-cfg-pins {
+				pinctrl-single,pins = <
+					0x10 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x00 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x20 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			gpio005_cfg_idle: gpio005-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x10 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x00 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x20 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			/* GPS config */
+			gps_cfg_func: gps-cfg-pins {
+				pinctrl-single,pins = <
+					0x010 0x00
+					0x014 0x00
+				>;
+			};
+
+			/* Power key config */
+			pwr_key_cfg_func: pwr-key-cfg-pins {
+				pinctrl-single,pins = <
+					0x0a0 0x00
+				>;
+			};
+		};
+
+		/* ============================================================
+		 * pmx5: GPIO128-137 function mux (0xfc182000)
+		 * Covers: SDIO (WiFi)
+		 * ============================================================ */
+		pmx5: pinmux@fc182000 {
+			compatible = "pinctrl-single";
+			reg = <0x0 0xfc182000 0x0 0x28>;
+			#pinctrl-cells = <1>;
+			#gpio-range-cells = <0x3>;
+			pinctrl-single,register-width = <0x20>;
+			pinctrl-single,function-mask = <0x7>;
+			/* pin base=128, nr pins=10, gpio function=0 */
+			pinctrl-single,gpio-range = <&range 128 10 0>;
+
+			/* SDIO WiFi: GPIO128(CLK) GPIO129(CMD) GPIO130(D0) GPIO131(D1) GPIO132(D2) GPIO133(D3) */
+			sdio_pmx_func: sdio-pins {
+				pinctrl-single,pins = <
+					0x000 MUX_M1 /* SDIO_CLK */
+					0x004 MUX_M1 /* SDIO_CMD */
+					0x008 MUX_M1 /* SDIO_D0 */
+					0x00c MUX_M1 /* SDIO_D1 */
+					0x010 MUX_M1 /* SDIO_D2 */
+					0x014 MUX_M1 /* SDIO_D3 */
+				>;
+			};
+		};
+
+		/* ============================================================
+		 * pmx6: GPIO128-137 pin config (0xfc182800)
+		 * ============================================================ */
+		pmx6: pinconf@fc182800 {
+			compatible = "pinconf-single";
+			reg = <0x0 0xfc182800 0x0 0x28>;
+			pinctrl-single,register-width = <0x20>;
+
+			/* SDIO WiFi config */
+			sdio_cfg_func: sdio-cfg-pins {
+				pinctrl-single,pins = <
+					0x000 0x40 /* SDIO_CLK: drive 0x40 */
+					0x004 0x40 /* SDIO_CMD: drive 0x40 */
+					0x008 0x40 /* SDIO_D0: drive 0x40 */
+					0x00c 0x40 /* SDIO_D1: drive 0x40 */
+					0x010 0x40 /* SDIO_D2: drive 0x40 */
+					0x014 0x40 /* SDIO_D3: drive 0x40 */
+				>;
+			};
+
+			sdio_clk_cfg_func: sdio-clk-cfg-pins {
+				pinctrl-single,pins = <
+					0x000 0x40 /* SDIO_CLK */
+				>;
+			};
+		};
+
+		/* ============================================================
+		 * pmx7: GPIO160-171 function mux (0xff37e000)
+		 * Covers: SD card, eMMC
+		 * ============================================================ */
+		pmx7: pinmux@ff37e000 {
+			compatible = "pinctrl-single";
+			reg = <0x0 0xff37e000 0x0 0x30>;
+			#pinctrl-cells = <1>;
+			#gpio-range-cells = <0x3>;
+			pinctrl-single,register-width = <0x20>;
+			pinctrl-single,function-mask = <0x7>;
+			/* pin base=160, nr pins=12, gpio function=0 */
+			pinctrl-single,gpio-range = <&range 160 12 0>;
+
+			/* SD card: GPIO160(CLK) GPIO161(CMD) GPIO162(D0) GPIO163(D1) GPIO164(D2) GPIO165(D3) */
+			sd_pmx_func: sd-pins {
+				pinctrl-single,pins = <
+					0x000 MUX_M1 /* SD_CLK */
+					0x004 MUX_M1 /* SD_CMD */
+					0x008 MUX_M1 /* SD_D0 */
+					0x00c MUX_M1 /* SD_D1 */
+					0x010 MUX_M1 /* SD_D2 */
+					0x014 MUX_M1 /* SD_D3 */
+				>;
+			};
+		};
+
+		/* ============================================================
+		 * pmx8: GPIO160-171 pin config (0xff37e800)
+		 * ============================================================ */
+		pmx8: pinconf@ff37e800 {
+			compatible = "pinconf-single";
+			reg = <0x0 0xff37e800 0x0 0x30>;
+			pinctrl-single,register-width = <0x20>;
+
+			/* SD card config */
+			sd_cfg_func: sd-cfg-pins {
+				pinctrl-single,pins = <
+					0x000 0x40 /* SD_CLK: drive 0x40 */
+					0x004 0x40 /* SD_CMD: drive 0x40 */
+					0x008 0x40 /* SD_D0: drive 0x40 */
+					0x00c 0x40 /* SD_D1: drive 0x40 */
+					0x010 0x40 /* SD_D2: drive 0x40 */
+					0x014 0x40 /* SD_D3: drive 0x40 */
+				>;
+			};
+
+			sd_clk_cfg_func: sd-clk-cfg-pins {
+				pinctrl-single,pins = <
+					0x000 0x40 /* SD_CLK */
+				>;
+			};
+		};
+
+		/* ============================================================
+		 * pmx16: GPIO144-231 pin config (0xfff11800)
+		 * ============================================================ */
+		pmx16: pinconf@fff11800 {
+			compatible = "pinconf-single";
+			reg = <0x0 0xfff11800 0x0 0x73c>;
+			pinctrl-single,register-width = <0x20>;
+
+			/* I2C1 config */
+			i2c1_cfg_func: i2c1-cfg-pins {
+				pinctrl-single,pins = <
+					0x054 0x20 /* I2C1_SCL, GPIO188: drive 0x20 */
+					0x058 0x20 /* I2C1_SDA, GPIO189: drive 0x20 */
+				>;
+			};
+
+			i2c1_cfg_idle: i2c1-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x054 0x20
+					0x058 0x20
+				>;
+			};
+
+			/* SLIMbus pin config */
+			slimbus_clk_cfg_func: slimbus-clk-cfg-pins {
+				pinctrl-single,pins = <
+					0x064 0x20
+				>;
+				pinctrl-single,slew-rate = <0x80 0x80>;
+			};
+
+			slimbus_clk_cfg_idle: slimbus-clk-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x064 0x20
+				>;
+				pinctrl-single,bias-pulldown = <2 2 0 2>;
+				pinctrl-single,slew-rate = <0x80 0x80>;
+			};
+
+			slimbus_data_cfg_func: slimbus-data-cfg-pins {
+				pinctrl-single,pins = <
+					0x068 0x20
+				>;
+				pinctrl-single,bias-pulldown = <2 2 0 2>;
+				pinctrl-single,bias-pullup = <1 1 0 1>;
+				pinctrl-single,slew-rate = <0x80 0x80>;
+			};
+
+			slimbus_data_cfg_idle: slimbus-data-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x068 0x20
+				>;
+				pinctrl-single,bias-pulldown = <2 2 0 2>;
+				pinctrl-single,bias-pullup = <1 1 0 1>;
+				pinctrl-single,slew-rate = <0x80 0x80>;
+			};
+
+			codec_ssi_cfg_func: codec-ssi-cfg-pins {
+				pinctrl-single,pins = <
+					0x090 0x20
+				>;
+			};
+
+			codec_ssi_cfg_idle: codec-ssi-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x090 0x20
+				>;
+				pinctrl-single,bias-pulldown = <2 2 0 2>;
+			};
+
+			codec_irq_cfg_func: codec-irq-cfg-pins {
+				pinctrl-single,pins = <
+					0xd8 0x00 /* GPIO148 CODEC_IRQ */
+				>;
+				pinctrl-single,bias-pullup = <1 1 0 1>;
+			};
+
+			codec_irq_cfg_idle: codec-irq-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0xd8 0x00 /* GPIO148 CODEC_IRQ */
+				>;
+				pinctrl-single,bias-pullup = <1 1 0 1>;
+			};
+
+			/* I2C7 config */
+			i2c7_cfg_func: i2c7-cfg-pins {
+				pinctrl-single,pins = <
+					0x128 0x20
+					0x12c 0x20
+				>;
+			};
+
+			/* SPI3 config */
+			spi3_clk_cfg_func: spi3-clk-cfg-pins {
+				pinctrl-single,pins = <
+					0x72c 0x00 /* SPI3_CLK, GPIO144 */
+				>;
+				pinctrl-single,bias-pulldown = <0x00 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x30 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			spi3_clk_cfg_idle: spi3-clk-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x72c 0x00 /* SPI3_CLK, GPIO144 */
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x30 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			spi3_data_cfg_func: spi3-data-cfg-pins {
+				pinctrl-single,pins = <
+					0x730 0x00 /* SPI3_CS_N, GPIO145 */
+					0x734 0x00 /* SPI3_DATA, GPIO146 */
+				>;
+				pinctrl-single,bias-pulldown = <0x00 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x20 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			spi3_data_cfg_idle: spi3-data-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x730 0x00 /* SPI3_CS_N, GPIO145 */
+					0x734 0x00 /* SPI3_DATA, GPIO146 */
+				>;
+				pinctrl-single,bias-pulldown = <0x00 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x20 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			gpio212_cfg_func: gpio212-cfg-pins {
+				pinctrl-single,pins = <
+					0x70c 0x00 /* GPIO_212 TP_INT_N */
+				>;
+				pinctrl-single,bias-pulldown = <0x00 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+			gpio212_cfg_idle: gpio212-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x70c 0x00
+				>;
+				pinctrl-single,bias-pulldown = <0x02 0x02 0x00 0x02>;
+				pinctrl-single,bias-pullup = <0x00 0x01 0x00 0x01>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x00 0x80>;
+			};
+
+
+			/* Fingerprint reset/CS: GPIO211/GPIO216 outputs, 2 mA */
+			fingerprint_cfg_func: fingerprint-cfg-pins {
+				pinctrl-single,pins = <
+					0x708 0x00
+					0x71c 0x00
+				>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x0 0x80>;
+			};
+
+			/* Fingerprint IRQ: GPIO210 input, pull-up */
+			fingerprint_irq_cfg_func: fingerprint-irq-cfg-pins {
+				pinctrl-single,pins = <
+					0x704 0x00
+				>;
+				pinctrl-single,bias-pullup = <1 1 0 1>;
+				pinctrl-single,drive-strength = <0x00 0x70>;
+				pinctrl-single,slew-rate = <0x0 0x80>;
+			};
+
+			/* Volume down (GPIO230) config: pull-up */
+			voldn_cfg_func: voldn-cfg-pins {
+				pinctrl-single,pins = <
+					0x0d0 0x10 /* pull-up, drive strength 0 */
+				>;
+			};
+
+			voldn_cfg_idle: voldn-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x0d0 0x10
+				>;
+			};
+
+			/* Volume up (GPIO231) config: pull-up */
+			volup_cfg_func: volup-cfg-pins {
+				pinctrl-single,pins = <
+					0x0d4 0x10 /* pull-up, drive strength 0 */
+				>;
+			};
+
+			volup_cfg_idle: volup-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x0d4 0x10
+				>;
+			};
+
+			/*
+			 * Backlight PWM pin configuration (GPIO184 / GPIO185).
+			 *
+			 * The vendor's gpio184_cfg_func / gpio185_cfg_func carry
+			 * the full raw pinctrl-single encoding:
+			 *   offset 0x044 (GPIO184) / 0x048 (GPIO185)
+			 *   bias-pulldown = <value 0x02, enable 0x00, disable 0x00, mask 0x02>
+			 *   bias-pullup   = <value 0x01, enable 0x00, disable 0x00, mask 0x01>
+			 *   drive-strength= <value 0x70 / 0x10, mask 0x70>
+			 *   slew-rate     = <value 0x80, mask 0x80>
+			 * Both pull sources are disabled (enable = 0), so the
+			 * effective register value is just the drive-strength and
+			 * slew-rate bits - i.e. GPIO184 gets 0x70 (drive 7) and
+			 * GPIO185 gets 0x10 (drive 1), each with slew-rate set.
+			 *
+			 * GPIO184's idle state additionally pulls down, which is
+			 * why blpwm_pmx_idle above only re-muxes GPIO184 back to
+			 * MUX_M0.
+			 */
+			blpwm_cfg_func: blpwm-cfg-pins {
+				pinctrl-single,pins = <
+					0x044 0x70 /* GPIO184: drive 7 */
+					0x048 0x10 /* GPIO185: drive 1 */
+				>;
+			};
+
+			blpwm_cfg_idle: blpwm-cfg-pins-idle {
+				pinctrl-single,pins = <
+					0x044 0x72 /* GPIO184: pull-down + drive 7 */
+					0x048 0x10
+				>;
+			};
+		};
+	};
+};

@@ -1,0 +1,2131 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device tree file for Honor Play (COR-AL00) based on Kirin 970 (Hi3670)
+ *
+ * Hardware specifications:
+ *   SoC:         Kirin 970 (Hi3670)
+ *   CPU:         4x Cortex-A73 @ 2.36GHz + 4x Cortex-A53 @ 1.84GHz
+ *   GPU:         Mali-G72 MP12
+ *   RAM:         4GB LPDDR4X
+ *   Storage:     128GB UFS 2.1 (Hynix H28S7Q302BMR)
+ *   Display:     6.3" 1080x2340 LCD, MIPI DSI Video mode, BOE FT8719
+ *   Touch:       FocalTech FTS on SPI3
+ *   WiFi/BT:     Hi1102 (SDIO WiFi, UART4 BT)
+ *   NFC:         NXP PN551 on I2C3 (disabled on this SKU)
+ *   USB:         Type-C, USB 2.0 OTG (DWC3 + FUSB302)
+ *   Cameras:     IMX498 (rear), IMX371 (ultra), GC2375 (front)
+ *   Fingerprint: FPC2050 on SPI2
+ *   PMIC:        Hi6421v600 via SPMI
+ *
+ * Copyright (C) 2024, Mainline port
+ */
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "hi3670.dtsi"
+#include "hi3670-cor-al00-pinctrl.dtsi"
+#include "hi3670-cor-al00-pmic.dtsi"
+#include "hi3670-modem.dtsi"
+#include "hi3670-cor-al00-noc.dtsi"
+#include "hi3670-cor-al00-hw-vote.dtsi"
+#include "hi3670-cor-al00-syscounter.dtsi"
+#include "hi3670-cor-al00-ddr-secprotect.dtsi"
+#include "scudatl_3650_39k_4400.dtsi"
+#include "desaysony_3650_110k_4400.dtsi"
+#include "desaysony_3650_68k_4400.dtsi"
+
+/ {
+	model = "Honor Play";
+	compatible = "hisilicon,hi3670-cor-al00", "hisilicon,hi3670";
+
+	aliases {
+		mmc1 = &dwmmc1;
+		mmc2 = &dwmmc2;
+		serial0 = &uart0;
+		serial1 = &uart1;
+		serial2 = &uart2;
+		serial3 = &uart3;
+		serial4 = &uart4;
+		serial5 = &uart5;
+		serial6 = &uart6;
+	};
+
+	chosen {
+		stdout-path = "serial6:115200n8";
+
+		/*
+		 * Simple framebuffer for boot display.  The binding requires the
+		 * node to be a child of /chosen: of_platform_default_populate_init()
+		 * only instantiates a "simple-framebuffer" device found there.
+		 * The base is the reserved logo-buffer (0x10600000) holding the
+		 * boot splash; 1080*2244*4 = 9694080 = 0x93eb80 bytes, which is
+		 * exactly the size EDK2's SimpleFbDxe reports for the same mode.
+		 */
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		simplefb: framebuffer@10600000 {
+			compatible = "simple-framebuffer";
+			reg = <0x0 0x10600000 0x0 0x93eb80>;
+			width = <1080>;
+			height = <2244>;
+			stride = <(1080 * 4)>;
+			format = "a8r8g8b8";
+			status = "okay";
+		};
+	};
+
+	/* Storage boot-device selector (matches the retail DTS layout). */
+	bootdevice {
+		compatible = "hisilicon,bootdevice";
+		status = "okay";
+	};
+
+	/* SECS power control (retail DTS: secs-atfd-power-ctrl). */
+	secs_power_ctrl {
+		compatible = "hisilicon,secs_power_ctrl";
+		secs-atfd-power-ctrl;
+		status = "okay";
+	};
+
+	/*
+	 * Modem base clock feeding the GNSS reference gates (retail sys-fdt:
+	 * fixed-clock 0x2ee0000 = 38.4 MHz).
+	 */
+	clk_modem_base: clk_modem_base {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <38400000>;
+		clock-output-names = "clk_modem_base";
+	};
+
+	/* eFuse attribute sizes (retail DTS: efuse node). */
+	efuse {
+		compatible = "hisilicon,efuse";
+		efuse_mem_attr_group_max = <0x40>;
+		efuse_mem_attr_huk = <0x100>;
+		efuse_mem_attr_scp = <0x40>;
+		efuse_mem_attr_authkey = <0x40>;
+		efuse_mem_attr_chipid = <0x40>;
+		efuse_mem_attr_tsensor_calibration = <0x37>;
+		efuse_mem_attr_huk_rd_disable = <0x03>;
+		efuse_mem_attr_authkey_rd_disable = <0x01>;
+		efuse_mem_attr_dbg_class_ctrl = <0x02>;
+		efuse_mem_attr_dieid = <0xa0>;
+		efuse_mem_attr_sltfinishflag = <0x03>;
+		status = "disabled";
+	};
+
+	/*
+	 * Connectivity sub-chip selector.  board.c::find_device_board_version()
+	 * reads "hi110x,subchip_type" from this node to pick the firmware
+	 * table; without it the driver silently defaults to Hi1102.  The
+	 * retail image ships Hi1102 V100R001C03B07SP02 firmware in
+	 * /vendor/firmware (no hi1102a/ directory), so pin it explicitly
+	 * rather than relying on the fallback.
+	 */
+	hi110x {
+		compatible = "hisilicon,hi110x";
+		hi110x,subchip_type = "hi1102";
+		/*
+		 * Property container only: board.c reads subchip_type through
+		 * of_find_compatible_node() (status-independent).  The same board
+		 * driver also matches "hisilicon,hi1102", so keeping this node
+		 * enabled would probe the driver twice and double-claim GPIOs.
+		 */
+		status = "disabled";
+	};
+
+	/*
+	 * Hi1102 connectivity power/reset GPIOs (retail DTS: hi1102 node).
+	 * power-on retail triplet <0xc9 7 0> = gpio4 pin 7; the XLDO pinmux
+	 * triplet <0x59 5 0> = gpio6 pin 5 (GPIO038), driven to
+	 * xldo_gpio_level.  The board driver reads both through the gpiod
+	 * API, hence the "-gpios" suffix.
+	 */
+	hi1102 {
+		compatible = "hisilicon,hi1102";
+		huawei,pmu_clk32b = "clk_pmu32kb";
+		hi1102,power-on-gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;
+		hi1102,xldo-pinmux-gpios = <&gpio6 5 GPIO_ACTIVE_HIGH>;
+		xldo_gpio_level = <1>;
+		/*
+		 * retail pinctrl-0/1: gpio052/053/054 pmx+cfg (sdio side pins,
+		 * offsets 0x94/0x98/0x9c in pmx0 and 0x98/0x9c/0xa0 in the
+		 * e896c800 pinconf block).
+		 */
+		pinctrl-names = "default", "idle";
+		pinctrl-0 = <&gpio052_pmx_func &gpio053_pmx_func &gpio054_pmx_func
+			     &gpio052_cfg_func &gpio053_cfg_func &gpio054_cfg_func>;
+		pinctrl-1 = <&gpio052_pmx_idle &gpio053_pmx_idle &gpio054_pmx_idle
+			     &gpio052_cfg_idle &gpio053_cfg_idle &gpio054_cfg_idle>;
+		hi1102,asic_version;
+		hi1102,power_prepare;
+		status = "okay";
+	};
+
+	/*
+	 * BFGX (BT/FM/GNSS combo) side of the Hi1102 (retail DTS: hisi_bfgx).
+	 * bfgn-wakeup retail triplet <0x235 2 0> = gpio27 pin 2.
+	 */
+	hisi_bfgx {
+		compatible = "hisilicon,hisi_bfgx";
+		hi1102,bfgn-wakeup-host-gpios = <&gpio27 2 GPIO_ACTIVE_HIGH>;
+		hi1102,uart_port = "/dev/ttyAMA4";
+		hi1102,uart_pclk_normal;
+		hi1102,irled_power_type = <0x00>;
+		have_ir;
+		status = "okay";
+	};
+
+	/*
+	 * GNSS reference clock controller (retail DTS: hisi_gps).  Binds
+	 * gps_refclk_src_3.c; clk_gnss_abb is optional in the driver and is
+	 * absent from the retail tree as well.
+	 */
+	hisi_gps {
+		compatible = "hisilicon,hisi_gps";
+		clocks = <&clk_gps_ref &clkmux_gps_ref &clk_mdm2gps0
+			  &clk_mdm2gps1 &clk_mdm2gps2>;
+		clock-names = "ref_clk", "mux_clk", "mdm_clk0",
+			      "mdm_clk1", "mdm_clk2";
+		pinctrl-names = "default", "idle";
+		pinctrl-0 = <&gpio005_pmx_func &gpio005_cfg_func>;
+		pinctrl-1 = <&gpio005_pmx_idle &gpio005_cfg_idle>;
+		status = "okay";
+	};
+
+	/*
+	 * WiFi ini file selection.  hisi_ini.c::ini_cfg_init() looks up
+	 * compatible "hi110x,customize" and reads the "ini_file_name" byte
+	 * array; without it board probe fails.
+	 */
+	hi110x_customize {
+		compatible = "hi110x,customize";
+		ini_file_name = "/vendor/etc/cfg_cor_al00_hisi.ini";
+	};
+
+	/*
+	 * Blackbox / running data recorder (retail DTS: rdr + rdr_ap_adapter).
+	 * drivers/soc/hisilicon/rdr is built (CONFIG_HISI_BB) and aborts its
+	 * early init without these nodes.  bbox_addr points at the reserved
+	 * region; the area layout mirrors the vendor table exactly, since the
+	 * firmware and the AP share it.
+	 */
+	rdr {
+		compatible = "hisilicon,rdr";
+		bbox_addr = <&bbox_mem>;
+		rdr-dumpctl = "1111111111100000";
+		rdr-log-max-size = <0x1f400000>;
+		rdr-log-max-nums = <0x14>;
+		rdr-diaginfo-size = <0x20000>;
+		wait-dumplog-timeout = <0x1d4c0>;
+		rdr_area_num = <0x11>;
+		unexpected-max-reboot-times = <0x05>;
+		bbox_area_names = "AP", "CP", "TEEOS", "HIFI", "LPM3", "IOM3",
+				  "ISP", "IVP", "EMMC", "MODEMAP", "CLK",
+				  "REGULATOR", "BFM", "HISEE", "NPU", "CONN",
+				  "EXCEPTIONTRACE";
+		bbox_area_coreid = <0x01 0x02 0x04 0x08 0x10 0x20 0x40 0x80
+				    0x100 0x200 0x400 0x800 0x1000 0x2000 0x4000
+				    0x8000 0x10000>;
+		rdr_area_sizes = <0x00 0x180000 0x40000 0x40000 0x40000
+				  0x40000 0x40000 0x40000 0x40000 0x00 0x10000
+				  0x10000 0x10000 0x10000 0x10000 0x2000 0x40000>;
+	};
+
+	rdr_ap_adapter {
+		compatible = "hisilicon,rdr_ap_adapter";
+		reg-dump-regions = <4>;
+		reg-names = "sctrl", "pctrl", "peri_crg", "gic";
+		reg = <0x0 0xfff0a000 0x0 0x800>,
+		      <0x0 0xe8a09000 0x0 0xc00>,
+		      <0x0 0xfff35000 0x0 0xc00>,
+		      <0x0 0xe82b0000 0x0 0x2000>;
+		ldrx2dbg-abs-timer = <0xfff0a000 0x1000 0x534 0x538>;
+		ap_trace_irq_size = <0x80000>;
+		ap_trace_task_size = <0x80000>;
+		ap_trace_cpu_idle_size = <0x40000>;
+		ap_trace_worker_size = <0x4000>;
+		ap_trace_mem_alloc_size = <0x80000>;
+		ap_trace_ion_alloc_size = <0x80000>;
+		ap_trace_time_size = <0x40000>;
+		ap_trace_cpu_on_off_size = <0x400>;
+		ap_trace_syscall_size = <0x0>;
+		ap_trace_hung_task_size = <0x1000>;
+		ap_trace_tasklet_size = <0x2000>;
+		ap_trace_diaginfo_size = <0x10000>;
+		ap_last_task_switch = <1>;
+		ap_dump_mem_modu_noc_size = <0x1000>;
+		ap_dump_mem_modu_ddr_size = <0x2000>;
+		ap_dump_mem_modu_tmc_size = <0x20000>;
+		ap_dump_mem_modu_gap_size = <0x100>;
+	};
+
+	/* Hi1102 connectivity (retail DTS: hisi_wifi subtree). */
+	hisi_wifi {
+		compatible = "hisilicon,hisi_wifi";
+		/* retail: hi1102,gpio_wlan_wakeup_host = <0x36 1 0> = gpio22_1 */
+		hi1102,wlan-wakeup-host-gpios = <&gpio22 1 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+
+		hisi_wifi_firmware {
+			compatible = "hisi,wifi_firmware";
+			firmware_type_num = "1";
+		};
+
+		hisi_wifi_supp {
+			compatible = "hisi,wifi_supp";
+			supp_config_template = "/vendor/etc/wifi/wpa_supplicant_hisi.conf";
+		};
+
+		hisi_wifi_p2p {
+			compatible = "hisi,wifi_p2p";
+			p2p_config_template = "/vendor/etc/wifi/p2p_supplicant_hisi.conf";
+		};
+
+		hisi_wifi_apd {
+			compatible = "hisi,wifi_hostapd";
+			hostapd_bin_file = "/vendor/bin/hostapd_hisi";
+		};
+	};
+
+	/* TEE OS mailbox doorbell (retail DTS: trusted_core, GIC_SPI 344). */
+	trusted_core {
+		compatible = "trusted_core";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 344 IRQ_TYPE_LEVEL_HIGH>;
+		reg = <0x0 0x0 0x0 0x0>;
+		status = "okay";
+	};
+
+	/*
+	 * FPC2050 fingerprint sensor on SPI2.
+	 *
+	 * The vendor node is platform-only (compatible "fpc,fingerprint"):
+	 * the kernel driver exposes /dev/fingerprint for IRQ, navigation and
+	 * power control, while the actual SPI traffic is handled by the FPC
+	 * HAL/TEE.  GPIO numbers match sys-fdt.dts:
+	 *   irq   GPIO_210 (0xd2)
+	 *   reset GPIO_211 (0xd3)
+	 *   cs    GPIO_216 (0xd8)
+	 * The LDO is PMIC ldo34 at 2.8 V; the property name keeps the vendor
+	 * driver's "fingreprint_ldo" spelling.
+	 */
+	fingerprint: fingerprint {
+		compatible = "fpc,fingerprint";
+		pinctrl-names = "default";
+		pinctrl-0 = <&fingerprint_pmx_func &fingerprint_cfg_func
+			     &fingerprint_irq_cfg_func>;
+		fingerprint,product = "cornell";
+		fingerprint,fpc2050 = <1>;
+		fingerprint,navigation_adjust1 = <0>;
+		fingerprint,navigation_adjust2 = <0>;
+		fingerprint,reset_gpio = <211>;
+		fingerprint,irq_gpio = <210>;
+		fingerprint,cs_gpio = <216>;
+		fingerprint,spi_num = <2>;
+		fingerprint,force_storage_type = <1>;
+		fingerprint,extern_ldo_name = "EXTERN_LDO";
+		fingerprint,extern_ldo_num = <0x22>;
+		fingerprint,extern_vol = <2800000>;
+		fingreprint_ldo-supply = <&ldo34>;
+		status = "disabled";
+	};
+
+	/*
+	 * Hi3670 JPEG decoder (JPU).
+	 *
+	 * The media1 CRG clk_jpg_func chain and the ip-regulator-atf rails
+	 * (ispsubsys, media_subsys) are modelled in mainline.  Runtime use
+	 * still depends on the secure firmware implementing the regulator
+	 * SMC call.
+	 *
+	 * Registers/IRQs match sys-fdt.decompiled.dts /jpu@E8301000:
+	 *   dec base  0xe8301000  top  0xe8304000  cvdr 0xe8302000
+	 *   smmu      0xe8320000  media1_crg 0xe87ff000
+	 *   peri_crg  0xfff35000  pmctrl 0xfff31000  sctrl 0xfff0a000
+	 *   err IRQ 302, done IRQ 301, other IRQ 306 (SPI)
+	 */
+	jpu: jpu@e8301000 {
+		compatible = "hisilicon,hisijpu";
+		reg = <0x0 0xe8301000 0x0 0x1000>,
+		      <0x0 0xe8304000 0x0 0x1000>,
+		      <0x0 0xe8302000 0x0 0x1000>,
+		      <0x0 0xe8320000 0x0 0x20000>,
+		      <0x0 0xe87ff000 0x0 0x1000>,
+		      <0x0 0xfff35000 0x0 0x1000>,
+		      <0x0 0xfff31000 0x0 0x1000>,
+		      <0x0 0xfff0a000 0x0 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 302 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 301 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 306 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "JPU_ERR", "JPU_DONE", "JPU_OTHER";
+		jpu-regulator-supply = <&ispsubsys>;
+		media1-regulator-supply = <&media_subsys>;
+		clocks = <&media1_crg HI3670_CLK_GATE_JPG_FUNC>;
+		clock-names = "clk_jpg_func";
+		fpga_flag = <0>;
+		platform-names = "kirin_970";
+		status = "disabled";
+	};
+
+	/*
+	 * Audio subsystem.  The ASP regulator is a platform power state in
+	 * the vendor tree; mainline controls the same state through the
+	 * sctrl ASP power register, so a fixed always-on regulator is enough
+	 * to satisfy the SLIMbus consumer.
+	 */
+	asp: regulator-asp {
+		compatible = "regulator-fixed";
+		regulator-name = "asp";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+	};
+
+	codec_controller: codec-controller@e82b9000 {
+		compatible = "hisilicon,codec-controller";
+		reg = <0x0 0xe82b9000 0x0 0x800>;
+		interrupts-extended = <&gpio18 4 IRQ_TYPE_LEVEL_LOW>;
+		pinctrl-names = "default", "idle";
+		pinctrl-0 = <&codec_irq_pmx_func &codec_irq_cfg_func>;
+		pinctrl-1 = <&codec_irq_pmx_idle &codec_irq_cfg_idle>;
+		clocks = <&hi6421v600_clk>;
+		clock-names = "clk_pmuaudioclk";
+		hisilicon,codec-sel = "hi6403";
+		hisilicon,bus-sel = "ssi";
+		hisilicon,reg-8bit-begin-addr = <0x20007000>;
+		hisilicon,reg-8bit-end-addr = <0x20007fff>;
+		pmu_clkcodec_addr = <0x03d>;
+		pmu_clkcodec_addr_bit = <0>;
+		slimbusclk_io_driver = <2>;
+		slimbusdata_io_driver = <2>;
+		pm_runtime_support;
+		status = "disabled";
+
+		hi64xx_irq: hi64xx-irq {
+			compatible = "hisilicon,hi64xx-irq";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			status = "disabled";
+
+			hi6403_codec: hi6403-codec {
+				compatible = "hisilicon,hi6403-codec";
+				hisilicon,classh_rcv_hp_switch = <0>;
+				hisilicon,hp_high_low_change_enable = <0>;
+				hisilicon,hp_res_detect_enable = <0>;
+				hisilicon,mic_num = <2>;
+				hisilicon,hs_det = <0>;
+				hisilicon,hs_ctrl = <0x31>;
+				hisilicon,hs_det_trigger = <1>;
+				hisilicon,coefficient = <2700>;
+				hisilicon,hs_3_pole_min_voltage = <0>;
+				hisilicon,hs_3_pole_max_voltage = <8>;
+				hisilicon,hs_4_pole_min_voltage = <900>;
+				hisilicon,hs_4_pole_max_voltage = <2650>;
+				hisilicon,hs_extern_cable_min_voltage = <2651>;
+				hisilicon,hs_extern_cable_max_voltage = <2700>;
+				hs_detect_extern_cable = <1>;
+				hisilicon,btn_play_min_voltage = <0>;
+				hisilicon,btn_play_max_voltage = <100>;
+				hisilicon,btn_voice_assistant_min_voltage = <110>;
+				hisilicon,btn_voice_assistant_max_voltage = <180>;
+				hisilicon,btn_volume_up_min_voltage = <181>;
+				hisilicon,btn_volume_up_max_voltage = <320>;
+				hisilicon,btn_volume_down_min_voltage = <320>;
+				hisilicon,btn_volume_down_max_voltage = <700>;
+				use_stereo_smartpa = <0>;
+				status = "disabled";
+			};
+		};
+	};
+
+	codecssi: codecssi@e82b9000 {
+		compatible = "hisilicon,codecssi";
+		reg = <0x0 0xe82b9000 0x0 0x800>;
+		pinctrl-names = "default", "idle";
+		pinctrl-0 = <&codec_ssi_pmx_func &codec_ssi_cfg_func>;
+		pinctrl-1 = <&codec_ssi_pmx_idle &codec_ssi_cfg_idle>;
+		status = "disabled";
+	};
+
+	slimbusmisc: slimbus@e8050000 {
+		compatible = "hisilicon,hi3670-slimbus";
+		reg = <0x0 0xe8050000 0x0 0xb00>,
+		      <0x0 0xe804e000 0x0 0xa000>,
+		      <0x0 0xfff0a000 0x0 0x1000>;
+		interrupts = <GIC_SPI 150 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "asp_irq_slimbus";
+		slimbus-reg-supply = <&asp>;
+		clocks = <&hi6421v600_clk>, <&sctrl HI3670_CLK_GATE_ASP_SUBSYS>;
+		clock-names = "clk_pmuaudioclk", "clk_asp_subsys";
+		pinctrl-names = "default", "idle";
+		pinctrl-0 = <&slimbus_pmx_func &slimbus_clk_cfg_func
+			     &slimbus_data_cfg_func>;
+		pinctrl-1 = <&slimbus_pmx_idle &slimbus_clk_cfg_idle
+			     &slimbus_data_cfg_idle>;
+		asp_power_state_offset = <0x06c>;
+		asp_clk_state_offset = <0x16c>;
+		slimbusclk_io_driver = <0xa8>;
+		slimbusdata_io_driver = <0xa3>;
+		slimbusclk_offset = <0x038>;
+		slimbusdata_offset = <0x03c>;
+		slimbusclk_cfg_offset = <0x864>;
+		slimbusdata_cfg_offset = <0x868>;
+		platform-type = "ASIC";
+		codec-type = "slimbus-6403cs";
+		clk_asp_subsys = <415000>;
+		slimbus_dynamic_freq = "true";
+		pm_runtime_support;
+		status = "disabled";
+	};
+
+	slimbus_dai: slimbus-dai {
+		compatible = "hisilicon,slimbus-dai";
+		status = "disabled";
+	};
+
+	/*
+	 * HiFi DSP control node (mailbox / firmware / shared hifi-data region).
+	 * The driver maps the reserved hifi-data region at 0x8e300000 through
+	 * its platform header, so no reg/memory-region property is needed.
+	 */
+	hifidsp: hifidsp {
+		compatible = "hisilicon,k3hifidsp";
+		platform-type = "ASIC";
+		status = "disabled";
+	};
+
+	sochifi_watchdog: sochifi-watchdog {
+		compatible = "hisilicon,sochifi-watchdog";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 213 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+	};
+
+	sound_hi6403: sound-hi6403 {
+		compatible = "hisilicon,hi3xxx-hi6403";
+		status = "disabled";
+	};
+
+	hi6210_hifi: hi6210-hifi {
+		compatible = "hisilicon,hi6210-hifi";
+		status = "disabled";
+	};
+
+	/* Volume keys */
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-names = "default", "idle";
+		pinctrl-0 = <&volup_pmx_func &volup_cfg_func
+			     &voldn_pmx_func &voldn_cfg_func>;
+		pinctrl-1 = <&volup_pmx_idle &volup_cfg_idle
+			     &voldn_pmx_idle &voldn_cfg_idle>;
+
+		key-volume-up {
+			wakeup-source;
+			gpios = <&gpio28 7 GPIO_ACTIVE_LOW>;
+			label = "Volume Up";
+			linux,code = <KEY_VOLUMEUP>;
+		};
+
+		key-volume-down {
+			wakeup-source;
+			gpios = <&gpio28 6 GPIO_ACTIVE_LOW>;
+			label = "Volume Down";
+			linux,code = <KEY_VOLUMEDOWN>;
+		};
+	};
+	
+	/*
+	 * Vibrator motor, powered by PMIC LDO17 (vibrator-reg-on = 0x23 in
+	 * sys-fdt.dtb, bit 1).  The regulator framework drives the enable bit.
+	 */
+	vibrator {
+		compatible = "regulator-vibrator";
+		vcc-supply = <&ldo17>;
+		vibrator-voltage-microvolt = <3000000>;
+	};
+
+	shell-frame {
+		compatible = "hisilicon,hi3670-shell-temp";
+		interval = <5000>;
+		bias = <500>;
+		count = <6>;
+		shell-temp-step = <200>;
+		shell-temp-step-range = <400>;
+		io-channels = <&hkadc 7>, <&hkadc 5>, <&hkadc 4>, <&hkadc 15>;
+		io-channel-names = "system_h", "charger", "pa_0", "dcxo0";
+		status = "disabled";
+
+		sensors {
+			sensor0 {
+				type = "system_h";
+				coef = <(-9643) (-4992) (-2884) (-2948) (-1338) (-470)>;
+			};
+
+			sensor1 {
+				type = "charger";
+				coef = <18144 3450 3046 2225 5669 23284>;
+			};
+
+			sensor2 {
+				type = "pa_0";
+				coef = <(-2183) (-597) (-1464) (-1644) (-1860) (-2265)>;
+			};
+
+			sensor3 {
+				type = "dcxo0";
+				coef = <6901 4549 2964 3091 371 (-676)>;
+			};
+
+			sensor4 {
+				type = "Battery";
+				coef = <20343 3543 9720 5217 3527 12166>;
+			};
+		};
+	};
+
+	shell-front {
+		compatible = "hisilicon,hi3670-shell-temp";
+		interval = <5000>;
+		bias = <0>;
+		count = <9>;
+		shell-temp-step = <200>;
+		shell-temp-step-range = <400>;
+		io-channels = <&hkadc 7>;
+		io-channel-names = "system_h";
+		status = "disabled";
+
+		sensors {
+			sensor0 {
+				type = "system_h";
+				coef = <0 0 0 0 0 0 0 0 0>;
+			};
+		};
+	};
+
+	shell-back {
+		compatible = "hisilicon,hi3670-shell-temp";
+		interval = <5000>;
+		bias = <0>;
+		count = <8>;
+		shell-temp-step = <200>;
+		shell-temp-step-range = <400>;
+		status = "disabled";
+
+		sensors {
+			sensor0 {
+				type = "Battery";
+				coef = <0 0 0 0 0 0 0 0>;
+			};
+		};
+	};
+
+	ambient {
+		compatible = "hisilicon,hi3670-ambient-temp";
+		interval = <900>;
+		bias = <1>;
+		io-channels = <&hkadc 7>, <&hkadc 5>, <&hkadc 4>, <&hkadc 15>;
+		io-channel-names = "system_h", "charger", "pa_0", "dcxo0";
+		status = "disabled";
+
+		sensors {
+			sensor0 {
+				type = "system_h";
+			};
+
+			sensor1 {
+				type = "charger";
+			};
+
+			sensor2 {
+				type = "pa_0";
+			};
+
+			sensor3 {
+				type = "dcxo0";
+			};
+		};
+	};
+
+	/*
+	 * COR-AL00 has 4 GiB of DRAM split around the SoC's MMIO hole: 3.5 GiB
+	 * from 0x0 to 0xe0000000, then the remaining 512 MiB remapped above the
+	 * hole at 0x2_00000000.  These are the same values the retail DTS and
+	 * the EDK2 FdtBlob carry, and they match PlatformMemoryMapLib.c plus the
+	 * 0x2_00000000 bank EDK2's FDT filler adds.
+	 *
+	 * An all-zero reg here is not harmless: it makes the FDT describe a
+	 * machine with no RAM at all, and anything reading /memory instead of
+	 * the UEFI memory map (kexec, crashkernel sizing, memblock debug output)
+	 * then sees zero bytes.
+	 */
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0xe0000000>,
+		      <0x2 0x0 0x0 0x20000000>;
+	};
+
+	/*
+	 * BL31 shared memory.  Child reg values are offsets from
+	 * HISI_SUB_RESERVED_BL31_SHARE_MEM_PHYMEM_BASE (0x209e1000), as
+	 * expected by the DRM secure access driver.
+	 */
+	bl31-kernel-shared-memory {
+		compatible = "hisilicon,bl31-shared-memory";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		drm-mem@1400 {
+			compatible = "hisi,share-memory-drm";
+			reg = <0x1400 0x400>;
+		};
+
+		efuse-mem@800 {
+			compatible = "hisi,share-memory-efuse";
+			reg = <0x800 0x400>;
+		};
+	};
+
+	/*
+	 * Reserved memory windows, mirroring the Honor Play EDK2 port
+	 * (PlatformMemoryMapLib.c plus FdtBlob/cor-al00.dtb).  Every reg entry
+	 * below is 4 KiB aligned in both base and size, which is what the
+	 * kernel's reserved-memory scanner, the CMA pageblock requirement and
+	 * EDK2's own ReservePages() all assume.
+	 */
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		/* CMA region for DMA allocations */
+		hisi_cma: hisi_cma@5a000000 {
+			reg = <0x0 0x5a000000 0x0 0x26000000>;
+			compatible = "shared-dma-pool";
+			reusable;
+			linux,cma-default;
+		};
+
+		/* Logo/boot splash buffer */
+		logo_buf: logo-buffer@10600000 {
+			reg = <0x0 0x10600000 0x0 0x3000000>;
+		};
+
+		/*
+		 * supersonic and modem-socp sit between the logo buffer and the
+		 * fastboot CMA.  EDK2's PlatformMemoryMapLib marks both as Reserv
+		 * and its FdtBlob carries them as no-map, so the UEFI carve never
+		 * hands them to the DXE allocator and they are not in the EFI
+		 * memory map either.  Mirror them here so a DT-booted kernel
+		 * reserves exactly the same physical windows.
+		 */
+		supersonic@13600000 {
+			reg = <0x0 0x13600000 0x0 0xa00000>;
+			no-map;
+		};
+
+		modem_socp@14800000 {
+			reg = <0x0 0x14800000 0x0 0x2000000>;
+			no-map;
+		};
+
+		/* IOMMU page table */
+		iommu_pgtable: iommu-pgtable@14000000 {
+			reg = <0x0 0x14000000 0x0 0x200000>;
+			no-map;
+		};
+
+		/* HEE (Hypervisor) */
+		hhee@14200000 {
+			reg = <0x0 0x14200000 0x0 0x600000>;
+			no-map;
+		};
+
+		/* Fastboot CMA */
+		fastboot_cma: fastboot-cma-mem@16800000 {
+			reg = <0x0 0x16800000 0x0 0x5c00000>;
+			compatible = "shared-dma-pool";
+			reusable;
+			linux,cma-default;
+		};
+
+		/*
+		 * modem-sa: the second modem carve-out, between HLOS 3 (ends at
+		 * 0x38000000) and the UEFI runtime block at 0x40000000.  Reserv in
+		 * EDK2's memory map, no-map in its FdtBlob.
+		 */
+		modem_sa@38000000 {
+			reg = <0x0 0x38000000 0x0 0x8000000>;
+			no-map;
+		};
+
+		/* IVP DSP */
+		ivp@1cd00000 {
+			reg = <0x0 0x1cd00000 0x0 0x100000>;
+			no-map;
+		};
+
+		/* Secure OS */
+		secos@1ce00000 {
+			reg = <0x0 0x1ce00000 0x0 0x3000000>;
+			no-map;
+		};
+
+		/* ARM Trusted Firmware */
+		bl31@1fe00000 {
+			reg = <0x0 0x1fe00000 0x0 0x400000>;
+			no-map;
+		};
+
+		/* Sensor Hub */
+		sensorhub_s: sensorhub-s@20200000 {
+			reg = <0x0 0x20200000 0x0 0x700000>;
+			no-map;
+		};
+
+		sensorhub_shmem@20900000 {
+			reg = <0x0 0x20900000 0x0 0x40000>;
+			no-map;
+		};
+
+		sensorhub_share_mem@20940000 {
+			reg = <0x0 0x20940000 0x0 0x80000>;
+			no-map;
+		};
+
+		/* Fault keep-alive */
+		fka_mem@209c0000 {
+			reg = <0x0 0x209c0000 0x0 0x3f000>;
+			no-map;
+		};
+
+		/* Maintenance dump */
+		mntndump@209ff000 {
+			reg = <0x0 0x209ff000 0x0 0x1000>;
+			no-map;
+		};
+
+		/*
+		 * Pstore/ramoops: last kernel log, matching the vendor
+		 * "pstore-mem" region and buffer sizes.
+		 */
+		ramoops: ramoops@20a00000 {
+			compatible = "ramoops";
+			reg = <0x0 0x20a00000 0x0 0x100000>;
+			record-size = <0x20000>;
+			console-size = <0x80000>;
+			pmsg-size = <0x20000>;
+		};
+
+		/* Modem shared memory */
+		modem_share_mem: modem-share-mem@8e800000 {
+			reg = <0x0 0x8e800000 0x0 0xb00000>;
+			no-map;
+		};
+
+		/* Modem maintenance */
+		modem_mntn@8f400000 {
+			reg = <0x0 0x8f400000 0x0 0x100000>;
+			no-map;
+		};
+
+		/* Blackbox (8 MiB, matches the vendor bbox-mem region) */
+		bbox_mem: bbox-mem@8f500000 {
+			reg = <0x0 0x8f500000 0x0 0x800000>;
+			no-map;
+		};
+
+		/* HiFi DSP */
+		hifi_base@8d500000 {
+			reg = <0x0 0x8d500000 0x0 0xc00000>;
+			no-map;
+		};
+
+		/* LPMCU */
+		lpmcu@8e200000 {
+			reg = <0x0 0x8e200000 0x0 0x40000>;
+			no-map;
+		};
+
+		/* HiFi data */
+		hifi_data@8e300000 {
+			reg = <0x0 0x8e300000 0x0 0x500000>;
+			no-map;
+		};
+
+		/* Modem */
+		modem_s: modem-s@80000000 {
+			reg = <0x0 0x80000000 0x0 0xa380000>;
+			no-map;
+		};
+
+		/* Voice ID */
+		voiceid@8c500000 {
+			reg = <0x0 0x8c500000 0x0 0x500000>;
+			no-map;
+		};
+
+		/* Secure camera */
+		sec_camera@8ca00000 {
+			reg = <0x0 0x8ca00000 0x0 0xb00000>;
+			no-map;
+		};
+
+		/* LPMX core */
+		lpmx_core@8e100000 {
+			reg = <0x0 0x8e100000 0x0 0x100000>;
+			no-map;
+		};
+
+		/* Align reserved */
+		align_reserved@8e240000 {
+			reg = <0x0 0x8e240000 0x0 0xc0000>;
+			no-map;
+		};
+
+		/* DP DHCP */
+		dp_dhcp@20b00000 {
+			reg = <0x0 0x20b00000 0x0 0x100000>;
+			no-map;
+		};
+	};
+
+	/*
+	 * WiFi power: the Hi1102's WLAN_PWR_EN line.
+	 *
+	 * sys-fdt.dts::hi1102 { hi1102,gpio_power_on = <0xc9 0x07 0x00>; }
+	 * - phandle 0xc9 is /amba/gpio@e8a0f000, i.e. the fourth PL061 bank
+	 *   (gpio4), so the pin is offset 7 in that bank. Cross-checked against
+	 *   the auto-generated table hisi_gpio_auto_gen.h:401, which decodes
+	 *   flat GPIO 201 as { gpio_group_id = 25, ugpio_bit = 1 };
+	 *   25 * 8 + ... resolves through the pinctrl-single,gpio-range mapping
+	 *   onto this same bank's bit 7 (the group ids of the fc1/iocfg banks do
+	 *   not continue the 0..31 pmx0 sequence, so the group/bit pair must be
+	 *   mapped through that gpio-range table, not decoded as bank = flat/8).
+	 *
+	 * Note the flat number 201 is NOT bank 25 offset 1 - the two banks on
+	 * this edge (gpio@fff0e000 and gpio@fff10000) are numbered 25/26/27 in
+	 * the aliases while their pins sit in the 0..7 offset range of each.
+	 */
+	wlan_en: wlan-en-1-8v {
+		compatible = "regulator-fixed";
+		regulator-name = "wlan-en-regulator";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		/*
+		 * GPIO4_7 (WLAN_PWR_EN) is owned by the connectivity board
+		 * driver (hi1102,power-on-gpios).  Do not claim it here too:
+		 * regulator-fixed would gpio_request() the same line and make
+		 * one of the two consumers fail with -EBUSY.
+		 */
+		regulator-always-on;
+		startup-delay-us = <70000>;
+		enable-active-high;
+	};
+
+	/* Hi1102 WiFi/BT share a UART: ttyAMA4 */
+	hinav: hinav-sys-power {
+		compatible = "hisilicon,hinav-sys-power";
+		fm_tas5776_regulator = <&ldo3>;
+	};
+
+	/*
+	 * GPU rail.
+	 *
+	 * The g3d rail is switched by LPM3 over mailbox channel 14; the
+	 * enable/disable commands are the same ones the vendor
+	 * "ip-regulator-lpm" node uses.  The GPU remains disabled until this
+	 * path has been verified on hardware.  clk_g3d is provided by the
+	 * stub clock over the LPM3 xfreq channel 13.
+	 */
+	gpu_vdd: regulator-g3d {
+		compatible = "hisilicon,hi3670-lpm-regulator";
+		regulator-name = "g3d";
+		regulator-min-microvolt = <950000>;
+		regulator-max-microvolt = <950000>;
+		hisilicon,enable-step = <0x30004 0x00>;
+		hisilicon,disable-step = <0x30104 0x00>;
+		mboxes = <&mailbox 14>;
+	};
+
+	/*
+	 * Display backlight.
+	 *
+	 * Consumes the Hi3670 BL-PWM (see &blpwm override below) and turns
+	 * duty cycles into backlight brightness levels.
+	 *
+	 * The fitted panel (cor_vn2 boe_td4320) reports
+	 *   bl-min = <0x64>   = 100
+	 *   bl-max = <0x242c> = 9260
+	 *   bl-ic-ctrl-type = <0x0a> = BLPWM_MODE
+	 * BLPWM_MODE means the backlight is driven by the BL-PWM block alone,
+	 * with no separate backlight IC and no enable GPIO (the auo_otm1901a
+	 * variant has hw,lcdkit-bl-gpio = <0x0b>, but that panel is not
+	 * fitted to this SKU), so there is no "enable-gpios" property here.
+	 *
+	 * The BL-PWM works in 10000-step units (bl-pwm-preci-type = <1>, i.e.
+	 * BLPWM_OUT_PRECISION_10000), and the vendor's bl-pwm-preci-no-convert
+	 * = <1> says the panel's 100..9260 range is fed to the block
+	 * unscaled - i.e. it already *is* the PWM step count.  Those two
+	 * endpoints are what the brightness-levels table encodes; the driver
+	 * interpolates linearly between them.
+	 *
+	 * The pwms period cell is the period the block actually produces at
+	 * 10000 steps, rounded up to a whole nanosecond; pwm-backlight scales
+	 * the requested duty against it.
+	 */
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&blpwm 0 100001 0>;
+		/*
+		 * brightness-levels are PWM step counts (bl-min..bl-max);
+		 * expand them to a 0..255 ramp so userspace gets a usable
+		 * range.  default-brightness-level is an *index* into that
+		 * table, not a step count: 110/255 ~= 43%, matching the
+		 * vendor default of 4000/9260.
+		 */
+		brightness-levels = <100 9260>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <110>;
+		status = "okay";
+	};
+
+	/*
+	 * Hi1102 Bluetooth/GNSS bridge (drivers/bluetooth/hci_hi1102.c).
+	 * Self-contained HCI UART transport that owns ttyAMA4, decodes the
+	 * private 0x7e framing and exposes a normal hciN device plus a
+	 * de-framed GNSS stream at /dev/gnss.
+	 *
+	 * The BT and GNSS subsystems share the single Hi1102 power domain with
+	 * WiFi, so this node references the existing wlan_en fixed regulator
+	 * (refcounted through the regulator framework) rather than claiming the
+	 * GPIO directly.  uart4 is left untouched - it is already enabled with
+	 * pinctrl above and its baud rate is set by the driver at open time.
+	 *
+	 * A fresh property name "uart-port" is used on purpose; it is distinct
+	 * from the vendor BFG DT contract's "hi1102,uart_port" so the two DT
+	 * interfaces stay unambiguous.  If omitted, the driver defaults to
+	 * "ttyAMA4" (alias serial4 = &uart4).
+	 */
+	hi1102_bt: hi1102-bt {
+		compatible = "hisilicon,hi1102-bt";
+		wlan-en-supply = <&wlan_en>;
+		uart-port = "ttyAMA4";
+		status = "disabled";
+	};
+
+	/*
+	 * IOM3 sensorhub IPC client.
+	 *
+	 * The motion / environment sensors (accel, gyro, mag, als, ps) are wired
+	 * to the IOM3 MCU's own I2C bus, not to the AP.  Linux reaches them over
+	 * the AO HiIPCV230 controller at 0xfff22000: the AP rings one boot
+	 * doorbell on the AP->IOM3 channel (ao-mailbox-0, phys ch 0) and then
+	 * exchanges 8-byte-header command/report packets; the IOM3->AP reports
+	 * arrive on ao-mailbox-1 (phys ch 1), whose receive interrupt is
+	 * GIC_SPI 172.
+	 *
+	 * iom3_sensorhub.c drives these mailbox registers directly (the mainline
+	 * hi3670-mailbox is registered against the LPM3 controller at
+	 * 0xe896b000), so this node carries the register window + the single RX
+	 * interrupt rather than a "mboxes" spec.  Values verified against the
+	 * board's real DTB ipc@0xfff22000 node (ao-mailbox-0:
+	 * src_bit=1/des_bit=0/index=0xc8; ao-mailbox-1:
+	 * interrupts=<0xac>/des_bit=1/index=0xc9).
+	 */
+	iomcu_sensorhub: sensorhub@fff22000 {
+		compatible = "hisilicon,iom3-sensorhub";
+		reg = <0x0 0xfff22000 0x0 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 172 IRQ_TYPE_LEVEL_HIGH>;	/* ao-mailbox-1, 0xac */
+		status = "disabled";
+	};
+
+	/*
+	 * AK8789 Hall-effect switch (magnet-sensing slide/cover detect).
+	 *
+	 * Unlike the sensors above, this part is wired directly to the AP's
+	 * GPIOs (no IOM3 MCU), so ak8789_hall.c binds it as a plain GPIO-IRQ
+	 * input device (EV_MSC / MSC_SCAN).
+	 *
+	 * Wiring decoded from the vendor DT hall node:
+	 *   huawei,single-n-pole = <0x235 0x01 0x00> -> &gpio27 1 (GPIO_217)
+	 *   huawei,single-s-pole = <0x2a   0x01 0x00> -> &gpio26 1 (GPIO_209)
+	 *   huawei,type = 1 (north pole only), huawei,id = 0.
+	 * Phandle 0x235 = /amba/gpio@fff10000 = gpio27; 0x2a = /amba/gpio@fff0f000
+	 * = gpio26 (see the CC_INT note above).
+	 *
+	 * The ak8789 is NOT populated on COR-AL00 (the vendor marks the node
+	 * "disabled"), so this node stays disabled: enabling it would request an
+	 * IRQ on a floating line and spam spurious wakeups.  Flip to "okay" on a
+	 * board that actually fits the part.
+	 */
+	hall: hall {
+		compatible = "hisilicon,ak8789-hall";
+		interrupt-parent = <&gpio27>;
+		interrupts = <1 IRQ_TYPE_EDGE_BOTH>;
+		north-gpios = <&gpio27 1 GPIO_ACTIVE_LOW>;
+		south-gpios = <&gpio26 1 GPIO_ACTIVE_LOW>;
+		status = "disabled";
+	};
+
+
+	/*
+	 * Power supply: Hi6523 charger (I2C6), Hi6421v600 coulomb counter,
+	 * BCI battery and the Huawei charging framework.  Values are taken
+	 * from the COR-AL00 factory device tree.
+	 */
+	battery: battery {
+		compatible = "huawei,hisi_bci_battery";
+		battery_is_removable = <0>;
+		battery_board_type = <2>;	/* 0: sft, 1: udp, 2: asic */
+		bci_work_interval_para = "0", "10", "5000",
+					 "10", "90", "10000",
+					 "90", "100", "30000";
+		temp_throttling = <0>;
+		temp_shutdown = <68>;
+		temp_below_vr_min = <0>;
+		bci_soc_at_term = <100>;
+		vth_correct_en = <1>;
+		vth_correct_para = <6 3687 10 3694>;
+		battery_design_fcc = <3750>;
+		status = "disabled";
+	};
+
+	hisi_battery: hisi_battery {
+		compatible = "hisi_battery";
+		batt_name = <&scudatl_3650_39k_4400
+			     &desaysony_3650_110k_4400
+			     &desaysony_3650_68k_4400>;
+		status = "disabled";
+	};
+
+	poweroff {
+		compatible = "gpio-poweroff";
+		gpios = <&gpio22 0 GPIO_ACTIVE_LOW>;
+		active-delay-ms = <0>;
+		inactive-delay-ms = <0>;
+		timeout-ms = <1000>;
+	};
+
+	chg_watchdog: chg-watchdog@e8a07000 {
+		compatible = "hisilicon,chgwdg";
+		reg = <0x0 0xe8a07000 0x0 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&crg_ctrl HI3670_OSC32K>;
+		clock-names = "wdogclk";
+		timeout-sec = <120>;
+		status = "disabled";
+	};
+
+	huawei_charger: huawei_charger {
+		compatible = "huawei,charger";
+		pd_support = <1>;
+		support_usb_nonstandard_ico = <1>;
+		support_standard_ico = <0>;
+		ico_all_the_way = <0>;
+		water_check_enabled = <0>;
+		fcp_vindpm = <8100>;
+		pd_cur_trans_ratio = <88>;
+		non_standard_charger_dsm = <0>;
+		charger_removed_dsm = <0>;
+		charge_done_sleep_enabled;
+		status = "disabled";
+	};
+
+	vbus_channel_charger: vbus_channel_charger {
+		compatible = "huawei,vbus_channel_charger";
+		status = "disabled";
+	};
+
+	vbus_channel_boost_gpio: vbus_channel_boost_gpio {
+		compatible = "huawei,vbus_channel_boost_gpio";
+		status = "disabled";
+	};
+
+	power_thermalzone: power_thermalzone {
+		compatible = "huawei,power_thermalzone";
+		status = "disabled";
+
+		sensors {
+			sensor0 {
+				sensor_name = "usb_port";
+				ops_name = "hisi_adc";
+				adc_channel = <3>;
+				ntc_index = <2>;
+			};
+		};
+	};
+
+	charging_core: charging_core {
+		compatible = "huawei,charging_core";
+		iin_ac = <2000>;
+		ichg_ac = <2100>;
+		otg_curr = <1200>;
+		iin_usb = <470>;
+		ichg_usb = <500>;
+		iin_nonstd = <1200>;
+		ichg_nonstd = <1000>;
+		iin_bc_usb = <1500>;
+		ichg_bc_usb = <1400>;
+		iin_vr = <1000>;
+		ichg_vr = <1000>;
+		iin_typech = <2000>;
+		ichg_typech = <2100>;
+		ichg_fcp = <3600>;
+		iin_fcp = <2000>;
+		typec_support = <0>;
+		high_temp_limit = <1>;
+		iterm = <150>;
+		ichrg_pre_limit = <128>;
+		segment_type = <0>;
+		vdpm_control_type = <1>;
+		vdpm_buf_limit = <100>;
+		vdpm_para = "-32767", "4100", "4500", "50",
+			    "4150", "32767", "4625", "50";
+		inductance_para = "-32767", "15", "2000", "0",
+				  "15", "32767", "2000", "0";
+		status = "disabled";
+	};
+
+	coul_core: coul_core {
+		compatible = "hisi,coul_core";
+		r_pcb = <0>;
+		r_coul_mohm = <10>;
+		current_offset_a = <1000000>;
+		startup_delta_soc = <10>;
+		last_soc_enable = <1>;
+		ntc_compensation_is = <0>;
+		fastboot_ntc_temp_compensation_value = <0>;
+		ntc_temp_compensation_para = "0", "0";
+		current_full_enable = <1>;
+		multi_ocv_open = <1>;
+		fcc_update_limit = <1>;
+		low_temp_opt_enable = <0>;
+		normal_cutoff_vol_mv = <3000>;
+		sleep_cutoff_vol_mv = <3350>;
+		low_vol_filter_cnt = <6>;
+		adc_batt_id = <11>;
+		adc_batt_temp = <10>;
+		soc_at_term = <98>;
+		basp_policy =
+			<3 100000 60 200 200 60 0 0x36d61a08
+			 2 70000 80 40 50 80 0 0x36d61a07
+			 1 40000 90 20 0 90 0 0x36d61a05
+			 0 0 0 0 0 100 0 0>;
+		status = "disabled";
+	};
+
+	hisi_coul_test: hisi_coul_test {
+		compatible = "hisi_coul_drv_test";
+		status = "disabled";
+	};
+
+};
+
+/* UART0 - debug / GPS */
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pmx_func &uart0_cfg_func>;
+	status = "okay";
+};
+
+/* UART2 */
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pmx_func &uart2_cfg_func>;
+	status = "okay";
+};
+
+/* UART4 - Bluetooth (Hi1102 BFG) */
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4_pmx_func &uart4_cfg_func>;
+	status = "okay";
+};
+
+/* UART6 - debug console */
+&uart6 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart6_pmx_func &uart6_cfg_func>;
+	console-fifo-enable;
+	console-fifo-size = <0x40000>;
+	status = "okay";
+};
+
+/* I2C1 - USB Type-C (FUSB302 + TUSB422) */
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pmx_func &i2c1_cfg_func>;
+	clock-frequency = <400000>;
+	status = "okay";
+
+	/*
+	 * The two Type-C devices share one interrupt line. sys-fdt.dts gives
+	 * both of them the identical specifier:
+	 *   fairchild,int_n = <0x235 0x05 0x00>;   (fusb302, at i2c 0x22)
+	 *   ti,alert-gpio    = <0x235 0x05 0x00>;   (tusb422, at i2c 0x20)
+	 * Phandle 0x235 resolves to /amba/gpio@fff10000, i.e. gpio27 offset 5:
+	 * hisi_gpio_auto_gen.h:441 names it GPIO_221 / GPIO_221_CC_INT
+	 * (flat = 27*8+5 = 221). The trailing 0x00 is the active-high flag,
+	 * matching an open-drain IRQ line that idles high and is pulled low by
+	 * either chip, hence IRQ_TYPE_EDGE_FALLING on the fusb302 side.
+	 */
+	fusb302@22 {
+		compatible = "fcs,fusb302";
+		reg = <0x22>;
+		interrupt-parent = <&gpio27>;
+		interrupts = <5 IRQ_TYPE_EDGE_FALLING>;
+		status = "okay";
+
+		/*
+		 * Type-C connector described the mainline way: TCPM parses the
+		 * connector properties and looks up the USB role switch through
+		 * the OF graph link to &dwc3 below.  PD is disabled because the
+		 * vendor charging stack uses Huawei FCP/SCP, not USB-PD, so the
+		 * port only needs the fixed Rp advertisement.
+		 */
+		connector {
+			compatible = "usb-c-connector";
+			label = "USB-C";
+			power-role = "dual";
+			data-role = "dual";
+			try-power-role = "sink";
+			pd-disable;
+			typec-power-opmode = "default";
+
+			port {
+				usb_con_ss: endpoint {
+					remote-endpoint = <&dwc3_role_switch>;
+				};
+			};
+		};
+	};
+
+	/*
+	 * BOM alternative to the FUSB302 above.  Only one of the two TCPCs is
+	 * populated, and both share the CC interrupt line.  The mainline TCPCI
+	 * driver (drivers/usb/typec/tcpm/tcpci_tusb422.c) performs the TUSB422
+	 * trim/OTSD/CC-sampling initialisation.  Keep this disabled while the
+	 * FUSB302 is fitted; if a board uses the TUSB422 instead, disable the
+	 * fusb302 node and enable this one.
+	 */
+	tusb422@20 {
+		compatible = "ti,tusb422";
+		reg = <0x20>;
+		interrupt-parent = <&gpio27>;
+		interrupts = <5 IRQ_TYPE_LEVEL_LOW>;
+		status = "disabled";
+
+		connector {
+			compatible = "usb-c-connector";
+			label = "USB-C";
+			power-role = "dual";
+			data-role = "dual";
+			try-power-role = "sink";
+			pd-disable;
+			typec-power-opmode = "default";
+
+			/*
+			 * The DWC3 role-switch endpoint currently links to the
+			 * FUSB302 connector.  If this BOM variant is used,
+			 * move the remote-endpoint link in &dwc3 here.
+			 */
+		};
+	};
+};
+
+/* I2C6 - Hi6523 charger (IOMCU) */
+&i2c6 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c6_pmx_func &i2c6_cfg_func>;
+	status = "okay";
+
+	charger@6b {
+		compatible = "huawei,hi6523_charger";
+		reg = <0x6b>;
+		gpio_int = <&gpio18 6 GPIO_ACTIVE_HIGH>;
+		bat_comp = <30>;
+		vclamp = <100>;
+		adc_channel_vbat_sys = <14>;
+		single_phase_buck = <0>;
+		fcp_support = <1>;
+		scp_support = <0>;
+		ico_current_mode = <0>;
+		switch_id_change = <0>;
+		status = "disabled";
+	};
+};
+
+/* I2C3 - NFC (PN551, disabled on COR-AL00) */
+&i2c3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c3_pmx_func &i2c3_cfg_func>;
+	clock-frequency = <400000>;
+	status = "disabled";
+
+	nfc: pn551@28 {
+		compatible = "nxp,pn553";
+		reg = <0x28>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+		vcc-supply = <&ldo3>;
+		vcc-io-supply = <&ldo4>;
+	};
+};
+
+/* I2C4 - Flash LED (MP3336) */
+&i2c4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c4_pmx_func &i2c4_cfg_func>;
+	clock-frequency = <400000>;
+	status = "okay";
+
+	flash@27 {
+		compatible = "huawei,mp3336";
+		reg = <0x27>;
+		status = "disabled";
+	};
+
+	/*
+	 * The live device tree of this SKU enables three pin-compatible flash
+	 * controllers at 0x63, 0x67 and 0x7f.  Only one part is populated; the
+	 * driver reads the chip ID register and binds the matching variant
+	 * (LM3642/AW3642 at 0x63, MP3331 at 0x67, or AW3642 at 0x7f).  Nodes
+	 * for absent parts fail probe without affecting the fitted one.
+	 */
+	flash@63 {
+		compatible = "huawei,flash-led";
+		reg = <0x63>;
+		status = "disabled";
+
+		led {
+			function = LED_FUNCTION_FLASH;
+			color = <LED_COLOR_ID_WHITE>;
+			flash-max-microamp = <1500000>;
+			flash-max-timeout-us = <600000>;
+			led-max-microamp = <375000>;
+		};
+	};
+
+	flash@67 {
+		compatible = "huawei,flash-led";
+		reg = <0x67>;
+		status = "disabled";
+
+		led {
+			function = LED_FUNCTION_FLASH;
+			color = <LED_COLOR_ID_WHITE>;
+			flash-max-microamp = <1490000>;
+			flash-max-timeout-us = <600000>;
+			led-max-microamp = <380000>;
+		};
+	};
+
+	flash@7f {
+		compatible = "huawei,flash-led";
+		reg = <0x7f>;
+		status = "disabled";
+
+		led {
+			function = LED_FUNCTION_FLASH;
+			color = <LED_COLOR_ID_WHITE>;
+			flash-max-microamp = <1500000>;
+			flash-max-timeout-us = <600000>;
+			led-max-microamp = <376000>;
+		};
+	};
+
+	/*
+	 * Display bias.  sys-fdt.dts's huawei,lcd_panel reports
+	 *   lcd-bias-ic-name = "hw_rt4801h";
+	 * and huawei,bias_kit selects vpos/vneg = 0x0f for both outputs,
+	 * which on the RT4801H's 100 mV steps is 5.5 V.  The vendor node is
+	 * rt4801h@73 on this same bus, so the mainline richtek,rt4801 driver
+	 * binds it without changes.  The board wires no enable GPIOs (the
+	 * bootloader leaves both outputs on), hence regulator-always-on.
+	 */
+	rt4801: regulator@73 {
+		compatible = "richtek,rt4801";
+		reg = <0x73>;
+		status = "okay";
+
+		dsvp: DSVP {
+			regulator-name = "dsvp";
+			regulator-min-microvolt = <5500000>;
+			regulator-max-microvolt = <5500000>;
+			regulator-boot-on;
+			regulator-always-on;
+		};
+
+		dsvn: DSVN {
+			regulator-name = "dsvn";
+			regulator-min-microvolt = <5500000>;
+			regulator-max-microvolt = <5500000>;
+			regulator-boot-on;
+			regulator-always-on;
+		};
+	};
+};
+
+/* UFS Storage */
+&ufs {
+	status = "okay";
+};
+
+/* SD card */
+&dwmmc1 {
+	bus-width = <0x4>;
+	sd-uhs-sdr12;
+	sd-uhs-sdr25;
+	sd-uhs-sdr50;
+	sd-uhs-sdr104;
+	cap-sd-highspeed;
+	disable-wp;
+	/*
+	 * Card detect. sys-fdt.dts's dwmmc1@FF37F000 carries
+	 *   cd-gpio = <0x38 0x05 0x00>;   cd-vol = <0x01>;
+	 * Phandle 0x38 resolves to /amba/gpio@fff0e000 = gpio25, so the line is
+	 * offset 5 of that bank; hisi_gpio_auto_gen.h:773 confirms it as
+	 * GPIO_205 / logic name GPIO_205_SD_DET (flat = 25*8+5 = 205, matching
+	 * the gpio_group_id/ugpio_bit pair in the same row). The trailing 0x00
+	 * is the active-high flag.
+	 *
+	 * cd-vol = <1> is the vendor's "active high card detect" flag
+	 * (dw_mmc_hi3xxx.c: dw_mci_hs_get_cd()), which in mainline is expressed
+	 * by GPIO_ACTIVE_HIGH on cd-gpios alone. cd-inverted must NOT be set as
+	 * well: mmc_of_parse() would then additionally set MMC_CAP2_CD_ACTIVE_HIGH
+	 * (drivers/mmc/core/host.c:316) and mmc_gpiod_request_cd() would toggle
+	 * the descriptor back to active low (drivers/mmc/core/slot-gpio.c:200),
+	 * inverting the sense twice.
+	 */
+	cd-gpios = <&gpio25 5 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sd_pmx_func
+		     &sd_clk_cfg_func
+		     &sd_cfg_func>;
+	vmmc-supply = <&ldo16>;
+	vqmmc-supply = <&ldo9>;
+	status = "okay";
+};
+
+/* WiFi SDIO (Hi1102) */
+&dwmmc2 {
+	bus-width = <0x4>;
+	non-removable;
+	broken-cd;
+	cap-power-off-card;
+	/*
+	 * sys-fdt.dts's dwmmc2@FC183000 carries "caps2-support-wifi",
+	 * "sdio_support_uhs" and "keep-power-in-suspend".  Translated into
+	 * mainline mmc terms (drivers/mmc/core/host.c::mmc_of_parse()):
+	 *
+	 *   cap-sdio-irq          -> MMC_CAP_SDIO_IRQ.  In-band SDIO interrupt
+	 *                           support; without it the WiFi part's out-of-
+	 *                           band-only interrupt routing cannot work and
+	 *                           the device can never signal "data ready" back
+	 *                           to the host over the D1 line.
+	 *   keep-power-in-suspend -> MMC_PM_KEEP_POWER.  The rail must stay up
+	 *                           across suspend so the card keeps its state
+	 *                           (and can wake the host); matches the vendor's
+	 *                           caps-wifi-no-lowpwr intent.
+	 *   no-sd, no-mmc         -> MMC_CAP2_NO_SD / NO_MMC.  This controller is
+	 *                           wired to the Hi1102 SDIO part only; there is
+	 *                           no SD or eMMC on it, so suppress those card
+	 *                           types instead of probing for them.
+	 *
+	 * The vendor's caps-wifi-no-lowpwr / caps2-wifi-support-cmd11 are
+	 * dw_mmc-k3 private tuning knobs with no mainline equivalent; the
+	 * standard properties above cover what a generic SDIO function driver
+	 * actually needs to bind to the Hi1102.
+	 */
+	cap-sdio-irq;
+	keep-power-in-suspend;
+	no-sd;
+	no-mmc;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdio_pmx_func
+		     &sdio_clk_cfg_func
+		     &sdio_cfg_func>;
+	vmmc-supply = <&wlan_en>;
+	status = "okay";
+};
+
+/* USB */
+&usb3_otg_bc {
+	status = "okay";
+};
+
+&dwc3 {
+	status = "okay";
+	dr_mode = "otg";
+
+	port {
+		dwc3_role_switch: endpoint {
+			remote-endpoint = <&usb_con_ss>;
+		};
+	};
+};
+
+/* PCIe (disabled by default) */
+&pcie {
+	status = "disabled";
+};
+
+/* SP805 watchdog clocked from clkin_ref (32.764 kHz) through clk_wd0_mux */
+&watchdog {
+	status = "okay";
+};
+
+/* Always-on timer */
+&timer0 {
+	status = "disabled";
+};
+
+/*
+ * GPU - Mali G72
+ *
+ * Panfrost needs a NULL-named clock and a "mali" supply, both provided by the
+ * LPM3 xfreq clock and the LPM3 g3d regulator.  Panfrost enables the regulator
+ * before its first GPU register access, so a failed LPM3 ACK makes probe fail
+ * cleanly instead of touching an unpowered block.
+ *
+ * Enabled for hardware validation.  If the board hangs before the console
+ * appears, revert this status to "disabled"; the GPU rail/clock are the only
+ * new consumers on this path.
+ */
+&gpu {
+	clocks = <&stub_clock HI3670_CLK_STUB_GPU>;
+	operating-points-v2 = <&gpu_opp>;
+	mali-supply = <&gpu_vdd>;
+	status = "okay";
+};
+
+/*
+ * Backlight PWM (Hi3670 BL-PWM)
+ *
+ * The vendor drives this from its own hisiblpwm driver, which pokes the
+ * block's OUT_CTRL/OUT_DIV/OUT_CFG registers directly and has no notion of
+ * the PWM framework.  Mainline instead exposes it as a one-channel PWM chip
+ * and lets the generic pwm-backlight driver do the duty-cycle maths.
+ *
+ * The panel's DT gives bl-pwm-preci-type = <1> (BLPWM_PRECISION_10000_TYPE),
+ * i.e. 10000 steps per period, which the driver's default already matches,
+ * so no "hisilicon,blpwm-precision" override is needed here.
+ */
+&blpwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&blpwm_pmx_func &blpwm_cfg_func>;
+	status = "okay";
+};
+
+/*
+ * Backlight device: consumes the BL-PWM above and turns duty cycles into
+ * backlight brightness levels.
+ *
+ * The fitted panel (cor_vn2 boe_td4320) reports
+ *   bl-min = <0x64>   = 100
+ *   bl-max = <0x242c> = 9260
+ *   bl-ic-ctrl-type = <0x0a> = BLPWM_MODE
+ * BLPWM_MODE means the backlight is driven by the BL-PWM block alone, with
+ * no separate backlight IC and no enable GPIO (the auo_otm1901a variant has
+ * hw,lcdkit-bl-gpio = <0x0b>, but that panel is not fitted to this SKU), so
+ * no "enable-gpios" property here.
+ *
+ * The BL-PWM works in 10000-step units (bl-pwm-preci-type = <1>, i.e.
+ * BLPWM_OUT_PRECISION_10000), and the vendor's bl-pwm-preci-no-convert = <1>
+ * says the panel's 100..9260 range is fed to the block unscaled - i.e. it
+ * already *is* the PWM step count.  Those two endpoints are what the
+ * brightness-levels table below encodes; the driver interpolates linearly.
+ *
+ * NOTE: this node lives inside the root node, alongside the other real
+ * devices, because a bare node definition cannot follow the root's closing
+ * brace - only "&label" overrides may appear there.
+ */
+
+/* DPE Display Engine */
+&dpe {
+	status = "okay";
+};
+
+/*
+ * DSI Host Controller
+ *
+ * dsi0's output side is port@1 (id 1), which must carry an explicit "reg =
+ * <1>". dpe's port, dsi0's input port and the panel's input port are all
+ * port id 0: of_graph_get_port_by_id() defaults a missing "reg" to 0, and a
+ * bare "port" node also keeps dtc's graph_port check happy (it wants a
+ * single-cell reg and #address-cells = <1>/#size-cells = <0> on the
+ * port's own children). See hi6220.dtsi's ade/dsi nodes for the same
+ * shape.
+ */
+&dsi0 {
+	status = "okay";
+
+	/*
+	 * hw,lcdkit-mipi-dsi-bit-clk = <562>: the vendor-qualified D-PHY data
+	 * rate per lane in MHz. It is not pixel_clk * 24 / 3 (which would be
+	 * 1536), because the panel runs in burst mode; Android feeds this value
+	 * straight into get_dsi_dphy_ctrl() as lane_clock = 2 * dsi_bit_clk.
+	 */
+	dsi-bit-clk-mhz = <562>;
+
+	port@1 {
+		reg = <1>;
+		dsi0_out: endpoint {
+			remote-endpoint = <&panel_in>;
+		};
+	};
+
+	panel@0 {
+		/*
+		 * sys-fdt.dts's huawei,lcd_panel node reports
+		 *   lcd_panel_type = "boe_td4320_6p3_1080p_video";
+		 * so the panel actually fitted to this SKU is the BOE TD4320,
+		 * not the FT8719 the driver was originally written for. The
+		 * two share the same 1080x2340 glass, 3 lanes, 562 Mbps data
+		 * rate and RGB888 format, but differ in porches, reset timing
+		 * and init sequence - hence the separate panel-hisi-td4320.c.
+		 *
+		 * The Honour Play was built with both panel vendors across
+		 * revisions; if a unit turns up with the FT8719, change this
+		 * one compatible string to "hisi,ft8719".
+		 *
+		 * The vendor prefix is "hisi", not "boe": upstream
+		 * drivers/gpu/drm/panel/panel-boe-td4320.c already binds
+		 * "boe,td4320" for the Xiaomi Redmi Note 7, which wires the
+		 * same glass as 4 lanes + video burst. Both drivers matching
+		 * one node is not a configuration we want to depend on the
+		 * link order for.
+		 */
+		compatible = "hisi,td4320";
+		reg = <0>;
+
+		/*
+		 * Bind the panel to the BL-PWM backlight defined above.  The
+		 * panel driver looks this phandle up via
+		 * drm_panel_of_backlight(); without it the panel still probes
+		 * but the backlight never gets enabled.
+		 */
+		backlight = <&backlight>;
+
+		/*
+		 * hw,lcdkit-reset-gpio = <29>, and sys-fdt.dts's
+		 * huawei,lcd_panel { gpio_id = <0x09 0x97>; } carries the same
+		 * pin in the pre-GPIO-API legacy encoding (the 0x09 is a magic
+		 * "LCD/XLOG group" tag, the 0x97 the zero-based pin ordinal).
+		 *
+		 * hisi_gpio_auto_gen.h:157 decodes the flat number 29 (named
+		 * GPIO_029, logic name UART0_RXD_UC, iomg base 0xE896C000 +
+		 * offset 0x724 on pinmux node pmx0) as
+		 *   gpio_group_id = 3, ugpio_bit = 5,
+		 * and hisi_lpregs.c:1010 shows flat = group * 8 + bit. Group 3
+		 * is the fourth bank on the e896c000/iocfg_lp edge, i.e.
+		 * /amba/gpio@e8a0e000, which mainline labels gpio3.
+		 *
+		 * The panel side of the level shifter drives this low, so the
+		 * line is GPIO_ACTIVE_LOW.
+		 */
+		reset-gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
+
+		/*
+		 * hw,lcdkit-iovcc-power-ctrl-mode = <0x01>
+		 * (POWER_CTRL_BY_REGULATOR): lcdio-vcc-supply = <&ldo4>, the
+		 * 1.8 V MIPI I/O rail (hw,lcdkit-lcdio-vcc = <1850000>).
+		 *
+		 * The supply property MUST be named "iovcc-supply": the fitted
+		 * panel driver (panel-hisi-td4320.c) asks for exactly that name,
+		 *   priv->iovcc = devm_regulator_get_optional(dev, "iovcc");
+		 * and enables it in its prepare sequence. A mismatch here
+		 * silently falls back to the dummy regulator, so ldo4 is never
+		 * enabled and the panel's MIPI I/O rail stays off (blank panel).
+		 * The "vddio-supply" name matches upstream's alternate FT8719
+		 * driver, not the TD4320 actually fitted to this SKU.
+		 */
+		iovcc-supply = <&ldo4>;
+
+		/*
+		 * hw,lcdkit-vci-power-ctrl-mode = <0x00>: vci has no dedicated
+		 * power-control method of its own (mode 0 = neither regulator nor
+		 * GPIO), so no DT supply is bound for it.
+		 *
+		 * hw,lcdkit-bias-power-ctrl-mode = <0x04>
+		 * (POWER_CTRL_BY_IC): vsp/vsn come from the on-board bias IC at
+		 * +/-5.5 V (hw,lcdkit-lcd-vsp / lcd-vsn = <5500000>).  On this
+		 * SKU that IC is the RT4801H at i2c4 0x73 described above, so the
+		 * supplies point at its DSVP/DSVN outputs.  panel-hisi-td4320.c
+		 * enables them around the reset pulse (it tolerates them being
+		 * absent, which is what kept the panel working before the driver
+		 * was enabled).
+		 */
+		vsp-supply = <&dsvp>;
+		vsn-supply = <&dsvn>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+/*
+ * SPI3 - the touch panel bus.
+ *
+ * Enabled with the wiring the real device uses.  See hi3670.dtsi's spi3 node
+ * for the register/clock/interrupt provenance and for why both clock names
+ * must be present (the AMBA core hard-requires "apb_pclk" to read the
+ * peripheral ID).  The controller binds pl022 and drives the panel as a
+ * plain SSP/SPI master.
+ *
+ * The COR-AL00 panel carries a Synaptics Touch Controller Module (TCM), not
+ * a FocalTech controller - the retail DTS describes it as
+ *
+ *     synaptics_tcm@0 {
+ *         compatible = "synaptics_tcm";
+ *         reg = <0>;
+ *         spi-max-frequency = <0x989680>;       (10 MHz)
+ *         synaptics,spi-mode = <3>;             (CPOL=1/CPHA=1)
+ *         default_project_id = "corn69130";
+ *         irq_config = <0>;                     (level low)
+ *         ...
+ *     };
+ *
+ * The vendor drives it through drivers/devkit/tpkit/panel/synaptics_tcm as a
+ * huawei_ts_kit sub-driver.  The mainline port is
+ * drivers/input/touchscreen/synaptics_tcm_spi.c, which speaks the TCM
+ * protocol directly and loads the ramless part's firmware through the F$35
+ * bootloader.
+ *
+ * Verified wiring (retail phandles):
+ *   CS      GPIO147 / TP_SPI3_CS0_N  &gpio18 3 (software CS)
+ *   reset   GPIO_015 / TP_RST_N  &gpio1 7   (phandle 0x4e)
+ *   irq     GPIO_212 / TP_INT_N  &gpio26 4  (phandle 0x2a)
+ *   spi-max-frequency 10 MHz, spi-mode 3, irq level-low (irq_config = 0)
+ *
+ * The controller is powered by the in-cell panel; there is no touch-side
+ * vci/vddio regulator (vci_ and vddio_ type all 0 in retail).  The driver
+ * defers its probe until the panel is up.
+ */
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	/*
+	 * The panel's chip select is GPIO147 (TP_SPI3_CS0_N), kept as a GPIO
+	 * and toggled by the SPI core around every transfer - retail does the
+	 * same in software (cs_gpio = <&gpio18 3>).  GPIO144/145/146 are
+	 * CLK/DI/DO.
+	 */
+	cs-gpios = <&gpio18 3 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default", "idle";
+	pinctrl-0 = <&spi3_pmx_func &spi3_cs_pmx_func &spi3_clk_cfg_func
+		     &spi3_data_cfg_func>;
+	pinctrl-1 = <&spi3_pmx_idle &spi3_clk_cfg_idle &spi3_data_cfg_idle>;
+	status = "okay";
+
+	/*
+	 * Synaptics TCM touchscreen (SPI3, CS0).
+	 *
+	 * Ramless part: the driver loads ts/corn_synaptics_tcm_corn69130.img
+	 * into PMEM through the F$35 bootloader at probe and after resume,
+	 * then fetches the touch report layout from the firmware.
+	 */
+	touchscreen@0 {
+		compatible = "syna,tcm-spi";
+		reg = <0>;				/* cs-gpios[0] = GPIO147 */
+		spi-max-frequency = <10000000>;		/* retail: 0x989680 */
+		spi-cpol;				/* spi-mode 3 */
+		spi-cpha;
+		spi-cs-setup-delay-ns = <10>;		/* retail: 10 ns */
+		spi-cs-hold-delay-ns = <200>;		/* retail: 200 ns */
+		interrupt-parent = <&gpio26>;
+		interrupts = <4 IRQ_TYPE_LEVEL_LOW>;	/* GPIO_212, irq_config=0 */
+		reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>; /* GPIO_015 */
+		pinctrl-names = "default", "idle";
+		pinctrl-0 = <&gpio212_pmx_func &gpio212_cfg_func
+			     &gpio015_pmx_func &gpio015_cfg_func>;
+		pinctrl-1 = <&gpio212_pmx_idle &gpio212_cfg_idle
+			     &gpio015_pmx_idle &gpio015_cfg_idle>;
+		touchscreen-size-x = <1080>;
+		touchscreen-size-y = <2340>;
+		syna,max-objects = <10>;
+		syna,reset-active-ms = <20>;		/* retail 0x14 */
+		syna,reset-delay-ms = <200>;		/* retail 0xc8 */
+		syna,firmware-name = "ts/corn_synaptics_tcm_corn69130.img";
+	};
+};
+
+/*
+ * ISP remote processor (Cortex-A7 + ISP core).
+ *
+ * The register windows, IRQ and firmware names come from the vendor
+ * kirin970_isp.dtsi.  The mainline driver is currently a remoteproc skeleton:
+ * it maps the windows and registers the remote processor, but firmware
+ * loading, the ISP SMMU and the mailbox/rpmsg transport are still missing.
+ * Keep the node disabled until those pieces are ported; enabling it today
+ * would only create a remote processor that cannot boot.
+ */
+&{/soc} {
+	isp@e8400000 {
+		compatible = "hisilicon,isp";
+		reg = <0x0 0xe8400000 0x0 0x200000>,	/* ISP core */
+		      <0x0 0xfff35000 0x0 0x1000>,	/* PERI_CRG */
+		      <0x0 0xfff31000 0x0 0x1000>,	/* PMC */
+		      <0x0 0xe8a09000 0x0 0x1000>,	/* PCTRL */
+		      <0x0 0xfff0a000 0x0 0x1000>,	/* SCTRL */
+		      <0x0 0xe86d0000 0x0 0x1000>,	/* NOC */
+		      <0x0 0xec050000 0x0 0x2000>,	/* CSSYS */
+		      <0x0 0xe8583000 0x0 0x1000>,	/* ISP sub ctrl */
+		      <0x0 0xe8580000 0x0 0x1000>;	/* ISP WDT */
+		interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL_HIGH>;
+		mboxes = <&mailbox 23>, <&mailbox 8>;
+		mbox-names = "tx", "rx";
+		firmware-name = "isp_fw.elf";
+		hisilicon,isp-name = "ISPCPU";
+		hisilicon,isp-remap-addr = <0x0>;
+		clocks = <&media1_crg HI3670_CLK_GATE_ISPCPU>,
+			 <&media1_crg HI3670_CLK_GATE_ISPFUNC>,
+			 <&media1_crg HI3670_CLK_GATE_VIVOBUSFREQ>,
+			 <&media1_crg HI3670_CLK_GATE_ISP_SYS>;
+		clock-names = "ispcpu", "ispfunc", "vivobus", "isp_sys";
+		assigned-clocks = <&media1_crg HI3670_CLK_MUX_ISPCPU>,
+				  <&media1_crg HI3670_CLK_MUX_ISPFUNC>,
+				  <&media1_crg HI3670_CLK_GATE_ISPCPU>,
+				  <&media1_crg HI3670_CLK_GATE_ISPFUNC>,
+				  <&media1_crg HI3670_CLK_GATE_VIVOBUSFREQ>;
+		assigned-clock-parents = <&crg_ctrl HI3670_CLK_GATE_PPLL4_MEDIA>,
+					 <&crg_ctrl HI3670_CLK_GATE_PPLL2_MEDIA>;
+		assigned-clock-rates = <0>, <0>, <900000000>, <480000000>,
+				       <415000000>;
+		core-supply = <&isp_srt>;
+		clockdep-supply = <&ispsubsys>;
+		status = "disabled";
+
+		iommu-info {
+			start-addr = <0xc0000000>;
+			size = <0x3ffffc00>;
+		};
+	};
+};
+
+/* bootdevice_init() looks up "hisilicon,sysctrl" (retail DTS name). */
+&sctrl {
+	compatible = "hisilicon,hi3670-sctrl", "syscon", "hisilicon,sysctrl";
+};
+
+&crg_ctrl {
+	clk_mdm2gps0: clk_mdm2gps0 {
+		compatible = "hisilicon,hi3xxx-clk-gate";
+		#clock-cells = <0>;
+		clocks = <&clk_modem_base>;
+		hisilicon,hi3xxx-clkgate = <0x30 0x40000>;
+		clock-output-names = "clk_mdm2gps0";
+	};
+
+	clk_mdm2gps1: clk_mdm2gps1 {
+		compatible = "hisilicon,hi3xxx-clk-gate";
+		#clock-cells = <0>;
+		clocks = <&clk_modem_base>;
+		hisilicon,hi3xxx-clkgate = <0x40 0x40000>;
+		clock-output-names = "clk_mdm2gps1";
+	};
+
+	clk_mdm2gps2: clk_mdm2gps2 {
+		compatible = "hisilicon,hi3xxx-clk-gate";
+		#clock-cells = <0>;
+		clocks = <&clk_modem_base>;
+		hisilicon,hi3xxx-clkgate = <0x420 0x02>;
+		clock-output-names = "clk_mdm2gps2";
+	};
+
+	clkmux_gps_ref: clkmux_gps_ref {
+		compatible = "hisilicon,hi3xxx-clk-mux";
+		#clock-cells = <0>;
+		hiword;
+		clocks = <&clk_mdm2gps0 &clk_mdm2gps1 &clk_mdm2gps2 &clk_mdm2gps2>;
+		hisilicon,clkmux-reg = <0xac 0x60>;
+		clock-output-names = "clkmux_gps_ref";
+	};
+
+	clk_gps_ref: clk_gps_ref {
+		compatible = "fixed-factor-clock";
+		#clock-cells = <0>;
+		clocks = <&clkmux_gps_ref>;
+		clock-div = <1>;
+		clock-mult = <1>;
+		clock-output-names = "clk_gps_ref";
+	};
+};
+
+/*
+ * ===========================================================================
+ * Minimal bring-up configuration
+ * ===========================================================================
+ *
+ * Only the display framebuffer, USB and UFS stay enabled; every other
+ * peripheral node is switched off so the board comes up with the smallest
+ * possible driver set.  What is deliberately kept alive:
+ *
+ *   /chosen/framebuffer@10600000  simplefb (early display)
+ *   usb3_otg_bc (+ usb_phy, bc12), dwc3, i2c1/fusb302  USB Type-C
+ *   ufs                                               root filesystem
+ *
+ * Plus the SoC infrastructure those three cannot work without: CPUs/GIC/
+ * timer/CCI, the clock-reset and syscon providers (crg_ctrl, crg_rst, pctrl,
+ * pmuctrl, sctrl), the GPIO banks and the pinctrl/pinconf blocks.  uart6 is
+ * kept because it is the kernel console (stdout-path).
+ *
+ * Everything below is the set of nodes that are turned off.  Delete a line
+ * (or the whole block) to bring a device back.
+ */
+
+/* ---- modem / Balong co-processor ------------------------------------- */
+&ipc_hisi_modem { status = "disabled"; };
+&ipc_hisi_modem_s { status = "disabled"; };
+&ipc_hisi_v230_mdm { status = "disabled"; };
+&cp_reset_app { status = "disabled"; };
+&hds_balong { status = "disabled"; };
+&mperf_balong { status = "disabled"; };
+&smntn_type { status = "disabled"; };
+&ap_sec_access_mdmddr { status = "disabled"; };
+&hardware_adapt { status = "disabled"; };
+&watchdog_app { status = "disabled"; };
+&ipf1 { status = "disabled"; };
+&psam1 { status = "disabled"; };
+&sysctrl_app { status = "disabled"; };
+&socp_app { status = "disabled"; };
+&socp_mem { status = "disabled"; };
+&{/icc_channels_app} { status = "disabled"; };
+&{/timer_device} { status = "disabled"; };
+&{/timerslice@fff0a000} { status = "disabled"; };
+&{/timer_stamp@fff0a000} { status = "disabled"; };
+&{/hrttimer_app@fff08000} { status = "disabled"; };
+&{/softtimer_type_support} { status = "disabled"; };
+&{/sysctrl_fiq} { status = "disabled"; };
+&{/pmic_ocp_modem} { status = "disabled"; };
+
+/* ---- connectivity combo (Wi-Fi / BT / GPS) --------------------------- */
+&{/hi110x} { status = "disabled"; };
+&{/hi1102} { status = "disabled"; };
+&hi1102_bt { status = "disabled"; };
+&{/hisi_bfgx} { status = "disabled"; };
+&{/hisi_gps} { status = "disabled"; };
+&{/hi110x_customize} { status = "disabled"; };
+&{/hisi_wifi} { status = "disabled"; };
+&clk_modem_base { status = "disabled"; };
+&clk_mdm2gps0 { status = "disabled"; };
+&clk_mdm2gps1 { status = "disabled"; };
+&clk_mdm2gps2 { status = "disabled"; };
+&clkmux_gps_ref { status = "disabled"; };
+&clk_gps_ref { status = "disabled"; };
+&dwmmc2 { status = "disabled"; };	/* Wi-Fi SDIO */
+
+/* ---- display stack other than simplefb ------------------------------- */
+&dpe { status = "disabled"; };
+&dsi0 { status = "disabled"; };
+&blpwm { status = "disabled"; };
+&backlight { status = "disabled"; };
+
+/* ---- GPU / multimedia ------------------------------------------------- */
+&gpu { status = "disabled"; };
+&gpu_vdd { status = "disabled"; };
+&venc_hw { status = "disabled"; };
+&ivp_smmu { status = "disabled"; };
+&hisi_ivp { status = "disabled"; };
+&hisi_ivp_ipc { status = "disabled"; };
+&cambricon_ipu { status = "disabled"; };
+&regulator_ip { status = "disabled"; };
+&jpu { status = "disabled"; };
+&smmu_lpae { status = "disabled"; };
+&media1_crg { status = "disabled"; };
+&media2_crg { status = "disabled"; };
+&pmctrl { status = "disabled"; };	/* only DPE/ISP used it */
+
+/*
+ * Kept enabled although they are not part of the three target devices:
+ *   iomcu / iomcu_rst - clock + reset providers for i2c1 (USB Type-C)
+ *   mailbox           - LPM3 channel transport used by stub_clock
+ *   stub_clock        - CPU OPP clocks referenced by /cpus/cpu@N
+ */
+
+/* ---- audio ------------------------------------------------------------ */
+&asp { status = "disabled"; };
+&codec_controller { status = "disabled"; };
+&codecssi { status = "disabled"; };
+&slimbusmisc { status = "disabled"; };
+&slimbus_dai { status = "disabled"; };
+&hifidsp { status = "disabled"; };
+&sochifi_watchdog { status = "disabled"; };
+&sound_hi6403 { status = "disabled"; };
+&hi6210_hifi { status = "disabled"; };
+
+/* ---- storage / buses not used ---------------------------------------- */
+&dwmmc1 { status = "disabled"; };	/* SD card */
+&pcie { status = "disabled"; };
+&spi3 { status = "disabled"; };		/* touch panel */
+&i2c0 { status = "disabled"; };
+&i2c2 { status = "disabled"; };
+&i2c3 { status = "disabled"; };
+&i2c4 { status = "disabled"; };
+&i2c6 { status = "disabled"; };
+&dma0 { status = "disabled"; };
+&{/soc/hwspinlock} { status = "disabled"; };
+&hkadc { status = "disabled"; };
+
+/* ---- misc board devices ---------------------------------------------- */
+&fingerprint { status = "disabled"; };
+&iomcu_sensorhub { status = "disabled"; };
+&hall { status = "disabled"; };
+&battery { status = "disabled"; };
+&hisi_battery { status = "disabled"; };
+&chg_watchdog { status = "disabled"; };
+&huawei_charger { status = "disabled"; };
+&vbus_channel_charger { status = "disabled"; };
+&vbus_channel_boost_gpio { status = "disabled"; };
+&power_thermalzone { status = "disabled"; };
+&charging_core { status = "disabled"; };
+&coul_core { status = "disabled"; };
+&hisi_coul_test { status = "disabled"; };
+&wlan_en { status = "disabled"; };
+&hinav { status = "disabled"; };
+&watchdog { status = "disabled"; };
+&tsens { status = "disabled"; };
+&{/soc/thermal-zones/cpu0-thermal} { status = "disabled"; };
+&{/soc/thermal-zones/cpu1-thermal} { status = "disabled"; };
+&{/soc/thermal-zones/gpu-thermal} { status = "disabled"; };
+&{/soc/thermal-zones/modem-thermal} { status = "disabled"; };
+&{/noc@0} { status = "disabled"; };
+&hw_vote { status = "disabled"; };
+&{/syscounter@fff08000} { status = "disabled"; };
+&ddr_secprotect { status = "disabled"; };
+&{/keys} { status = "disabled"; };
+&{/vibrator} { status = "disabled"; };
+&{/poweroff} { status = "disabled"; };
+&{/efuse} { status = "disabled"; };
+&{/shell-frame} { status = "disabled"; };
+&{/shell-front} { status = "disabled"; };
+&{/shell-back} { status = "disabled"; };
+&{/ambient} { status = "disabled"; };
+&{/trusted_core} { status = "disabled"; };
+&{/secs_power_ctrl} { status = "disabled"; };
+&{/rdr} { status = "disabled"; };
+&{/rdr_ap_adapter} { status = "disabled"; };
+&{/bl31-kernel-shared-memory} { status = "disabled"; };
+&spmi { status = "disabled"; };
+/*
+ * uart0 (0xfdf02000) is the debug UART the retail firmware and EDK2
+ * both use (EDK2 PcdSerialRegisterBase = 0xFDF02000), so it stays
+ * enabled: it is the one port that can carry earlycon/bootconsole
+ * while the display path is still coming up.
+ */
+&uart0 { status = "okay"; };
+&uart2 { status = "disabled"; };
+&uart4 { status = "disabled"; };	/* Bluetooth */

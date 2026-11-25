@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/display/panel/hisi,td4320.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon-adapted BOE TD4320 MIPI-DSI panel
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description: |
+  BOE TD4320 6.3" 1080x2340 video-mode MIPI-DSI panel as wired on the
+  Honor Play (COR-AL00).
+
+  The vendor prefix is "hisi" rather than "boe" because upstream already
+  binds "boe,td4320" (drivers/gpu/drm/panel/panel-boe-td4320.yaml) to the
+  same glass on the Xiaomi Redmi Note 7, where it runs as 4 data lanes in
+  video burst mode. The COR-AL00 runs it as 3 data lanes with sync pulses
+  and carries a different init sequence, so it needs its own binding and
+  its own driver: drivers/gpu/drm/hisilicon/hisi_dpe/panel-hisi-td4320.c.
+
+allOf:
+  - $ref: panel-common.yaml#
+
+properties:
+  compatible:
+    const: hisi,td4320
+
+  reg:
+    maxItems: 1
+    description: DSI virtual channel of the peripheral
+
+  reset-gpios:
+    description: |
+      Panel reset, active low. The driver's probe default is
+      GPIOD_OUT_HIGH, i.e. the panel boots held in reset until the
+      prepare sequence releases it.
+
+  iovcc-supply:
+    description: 1.8 V MIPI I/O rail
+
+  vsp-supply:
+    description: |
+      Positive bias rail (+5.5 V). Optional - on the COR-AL00 it comes
+      from an on-board bias IC with no mainline driver, so it is left
+      unbound and the driver tolerates its absence.
+
+  vsn-supply:
+    description: Negative bias rail (-5.5 V), same caveat as vsp-supply
+
+required:
+  - compatible
+  - reg
+  - reset-gpios
+  - port
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/gpio/gpio.h>
+
+    dsi {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        panel@0 {
+            compatible = "hisi,td4320";
+            reg = <0>;
+
+            backlight = <&backlight>;
+            iovcc-supply = <&ldo4>;
+
+            reset-gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
+
+            port {
+                endpoint {
+                    remote-endpoint = <&dsi_out>;
+                };
+            };
+        };
+    };
+
+...

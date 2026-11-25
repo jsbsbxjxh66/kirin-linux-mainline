@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config HISI_ISP_REMOTEPROC
+	tristate "Hisilicon ISP remote processor"
+	depends on ARCH_HISI || COMPILE_TEST
+	depends on REMOTEPROC
+	depends on OF
+	depends on IOMMU_SUPPORT
+	select IOMMU_IO_PGTABLE_LPAE
+	help
+	  Say y here to support the Hisilicon Hi3670 ISP remote processor.
+
+	  This is a mainline-style remoteproc driver.  It registers the ISP
+	  Cortex-A7 with the remoteproc framework, maps the ISP register
+	  windows, owns a local LPAE page table for the ISP SMMU and can load
+	  an ELF firmware into on-demand mapped IOVA.
+
+	  Optional clocks and regulators, the CRG remap bit and the ISP SMMU
+	  registers are wired up.  The DT clock provider/supply wiring, secure
+	  memory, shared memory and the mailbox/rpmsg transport are not ported
+	  yet, so the remote processor cannot be booted.  Keep the DT node
+	  disabled until those pieces land.

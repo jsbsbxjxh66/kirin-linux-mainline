@@ -1,0 +1,119 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/slimbus/hisilicon,hi3670-slimbus.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi3670 ASP SLIMbus controller
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The ASP SLIMbus controller integrates a Cadence SLIMbus controller with the
+  Hisilicon ASP subsystem. The controller provides the SLIMbus clock and data
+  lines used by the Hi6403 audio codec.
+
+properties:
+  compatible:
+    const: hisilicon,hi3670-slimbus
+
+  reg:
+    maxItems: 3
+
+  interrupts:
+    maxItems: 1
+
+  interrupt-names:
+    const: asp_irq_slimbus
+
+  slimbus-reg-supply:
+    description: Regulator supplying the SLIMbus I/O rail.
+
+  clocks:
+    maxItems: 2
+
+  clock-names:
+    items:
+      - const: clk_pmuaudioclk
+      - const: clk_asp_subsys
+
+  pinctrl-names:
+    items:
+      - const: default
+      - const: idle
+
+  pinctrl-0: true
+
+  pinctrl-1: true
+
+  asp_power_state_offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: ASP subsystem power state register offset.
+
+  asp_clk_state_offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: ASP subsystem clock state register offset.
+
+  slimbusclk_io_driver:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: SLIMbus clock pin drive strength configuration.
+
+  slimbusdata_io_driver:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: SLIMbus data pin drive strength configuration.
+
+  slimbusclk_offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: SLIMbus clock pad register offset.
+
+  slimbusdata_offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: SLIMbus data pad register offset.
+
+  slimbusclk_cfg_offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: SLIMbus clock pad configuration register offset.
+
+  slimbusdata_cfg_offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: SLIMbus data pad configuration register offset.
+
+  platform-type:
+    enum: [ASIC, FPGA]
+    default: ASIC
+
+  codec-type:
+    $ref: /schemas/types.yaml#/definitions/string
+    description: Codec type attached to the SLIMbus controller.
+
+  clk_asp_subsys:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: ASP subsystem clock rate in Hz.
+
+  slimbus_dynamic_freq:
+    $ref: /schemas/types.yaml#/definitions/string
+    enum: ["true", "false"]
+    description: Whether the SLIMbus clock frequency is changed dynamically.
+
+  pm_runtime_support:
+    type: boolean
+    description: Enable runtime PM for the controller.
+
+  switch_framer_disable:
+    type: boolean
+    description: Disable switching the SLIMbus framer.
+
+  hi6402-soundtrigger-if1-used:
+    type: boolean
+    description: Use the Hi6402 sound trigger interface 1 wiring.
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - interrupt-names
+  - clocks
+  - clock-names
+
+additionalProperties: false

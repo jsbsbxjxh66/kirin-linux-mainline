@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/rtc/hisilicon,hi6421v600-rtc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi6421v600 PMIC RTC
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The Hi6421v600 PMIC provides the battery-backed real-time clock and alarm.
+  An optional SoC RTC child provides a second time source and alarm interrupt.
+
+properties:
+  compatible:
+    const: hisilicon,hi6421v600-rtc
+
+  interrupts:
+    maxItems: 1
+
+  interrupt-names:
+    const: hisi-pmic-rtc
+
+  hisilicon,pmic-rtc-base:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: PMIC RTC register base address.
+
+  hisilicon,pmic-rtc-imr:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: PMIC RTC interrupt mask register.
+
+  hisilicon,pmic-rtc-icr:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: PMIC RTC interrupt clear register.
+
+  hisilicon,pmic-rtc-ib:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: PMIC RTC interrupt bank.
+
+  hisilicon,pmic-rtc-xo-thrshd-pwroff-val:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: PMIC RTC crystal oscillator power-off threshold.
+
+  soc-rtc:
+    type: object
+    description: SoC RTC used as a secondary time source.
+
+    properties:
+      compatible:
+        const: hisilicon,soc-rtc
+
+      soc-rtc-baseaddr:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: SoC RTC register base address.
+
+      interrupts:
+        maxItems: 1
+
+    required:
+      - compatible
+      - soc-rtc-baseaddr
+      - interrupts
+
+    additionalProperties: false
+
+required:
+  - compatible
+  - interrupts
+  - interrupt-names
+  - hisilicon,pmic-rtc-base
+  - hisilicon,pmic-rtc-imr
+  - hisilicon,pmic-rtc-icr
+  - hisilicon,pmic-rtc-ib
+  - hisilicon,pmic-rtc-xo-thrshd-pwroff-val
+  - soc-rtc
+
+additionalProperties: false

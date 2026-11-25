@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/remoteproc/hisilicon,hi3670-isp-rproc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi3670 ISP remote processor
+
+maintainers:
+  - linux-kernel@vger.kernel.org
+
+description: |
+  The Hi3670 ISP block contains a Cortex-A7 remote processor and an ISP
+  core.  The A7 runs the ISP firmware and accesses memory through a
+  Hisilicon SMMU that is programmed by the host.
+
+properties:
+  compatible:
+    const: hisilicon,isp
+
+  reg:
+    minItems: 1
+    maxItems: 9
+    description: |
+      Register windows: ISP core first, then PERI_CRG, PMC, PCTRL, SCTRL,
+      NOC, CSSYS, ISP sub control and ISP WDT.  Only the ISP core window is
+      owned exclusively by this device; the others are shared register
+      blocks mapped read/write without requesting them.
+
+  interrupts:
+    maxItems: 1
+
+  mboxes:
+    maxItems: 2
+    description: |
+      AP-to-ISP and ISP-to-AP mailbox channels.  The first is used to kick
+      a virtqueue, the second delivers virtqueue indices from firmware.
+
+  mbox-names:
+    items:
+      - const: tx
+      - const: rx
+
+  firmware-name:
+    description: Name of the ISP firmware ELF image.
+
+  hisilicon,isp-name:
+    $ref: /schemas/types.yaml#/definitions/string
+    description: Name used for the remote processor.
+
+  hisilicon,isp-remap-addr:
+    $ref: /schemas/types.yaml#/definitions/uint64
+    description: Address written to the ISP A7 remap register at boot.
+
+  clocks:
+    maxItems: 3
+
+  clock-names:
+    items:
+      - const: ispcpu
+      - const: ispfunc
+      - const: ispi2c
+
+  core-supply:
+    description: ISP core power supply.
+
+  clockdep-supply:
+    description: Supply that must be on before the ISP clocks are enabled.
+
+  iommu-info:
+    type: object
+    additionalProperties: false
+    description: IOVA window managed by the ISP SMMU.
+    properties:
+      start-addr:
+        $ref: /schemas/types.yaml#/definitions/uint32
+      size:
+        $ref: /schemas/types.yaml#/definitions/uint32
+    required:
+      - start-addr
+      - size
+
+required:
+  - compatible
+  - reg
+  - interrupts
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+
+    isp@e8400000 {
+        compatible = "hisilicon,isp";
+        reg = <0x0 0xe8400000 0x0 0x200000>,
+              <0x0 0xfff35000 0x0 0x1000>,
+              <0x0 0xfff31000 0x0 0x1000>,
+              <0x0 0xe8a09000 0x0 0x1000>,
+              <0x0 0xfff0a000 0x0 0x1000>,
+              <0x0 0xe86d0000 0x0 0x1000>,
+              <0x0 0xec050000 0x0 0x2000>,
+              <0x0 0xe8583000 0x0 0x1000>,
+              <0x0 0xe8580000 0x0 0x1000>;
+        interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL_HIGH>;
+        firmware-name = "isp_fw.elf";
+        hisilicon,isp-name = "ISPCPU";
+        hisilicon,isp-remap-addr = <0x0>;
+        status = "disabled";
+
+        iommu-info {
+            start-addr = <0xc0000000>;
+            size = <0x3ffffc00>;
+        };
+    };

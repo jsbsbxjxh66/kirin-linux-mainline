@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/soc/hisilicon/hisilicon,k3hifidsp.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Kirin HiFi DSP control
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The HiFi DSP control node represents the always-on control interface for
+  the Kirin HiFi DSP. The DSP firmware and shared data region are managed by
+  the bootloader; this node only selects the platform type used by the
+  mailbox protocol.
+
+properties:
+  compatible:
+    const: hisilicon,k3hifidsp
+
+  platform-type:
+    enum: [ASIC, FPGA]
+    default: ASIC
+
+required:
+  - compatible
+
+additionalProperties: false

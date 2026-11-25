@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/iio/adc/hisilicon,hi3670-hkadc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: HiSilicon Hi3670 HKADC
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description: |
+  The Hi3670 HKADC (housekeeping ADC) is owned by the LPM3 firmware.  The AP
+  requests a conversion over the HiIPCV230 mailbox and receives the result on
+  the matching receive channel.
+
+properties:
+  compatible:
+    const: hisilicon,hi3670-hkadc
+
+  mboxes:
+    items:
+      - description: mailbox channel used to send conversion requests to LPM3
+      - description: mailbox channel used to receive conversion results
+
+  mbox-names:
+    items:
+      - const: tx
+      - const: rx
+
+  "#io-channel-cells":
+    const: 1
+
+required:
+  - compatible
+  - mboxes
+  - mbox-names
+  - "#io-channel-cells"
+
+additionalProperties: false
+
+examples:
+  - |
+    adc {
+        compatible = "hisilicon,hi3670-hkadc";
+        mboxes = <&mailbox 16>, <&mailbox 0>;
+        mbox-names = "tx", "rx";
+        #io-channel-cells = <1>;
+    };
+...

@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: GPL-2.0-only
+menu "Hisilicon"
+
+config SND_I2S_HI6210_I2S
+	tristate "Hisilicon I2S controller"
+	select SND_SOC_GENERIC_DMAENGINE_PCM
+	help
+	  Hisilicon I2S
+
+config SND_SOC_HISILICON_SLIMBUS_DAI
+	tristate "HiSilicon SLIMbus CPU DAI"
+	depends on HISILICON_PLATFORM_SLIMBUS
+	help
+	  Say Y to enable the HiSilicon SLIMbus CPU DAI.
+
+config SND_SOC_PCM_HI6210
+	tristate "HiSilicon Hi6210 HIFI PCM platform"
+	depends on HIFI_MAILBOX
+	depends on HIFI_DSP_ONE_TRACK
+	select SND_HWDEP
+	help
+	  Say Y to enable the HiSilicon HIFI PCM platform used by the
+	  Hi3660/Hi6403 sound card.
+
+config SND_SOC_HI3660_HI6403
+	tristate "Hi3660-Hi6403 sound support"
+	depends on SND_SOC_HI6403
+	select SND_SOC_HISILICON_SLIMBUS_DAI
+	select SND_SOC_PCM_HI6210
+	help
+	  Say Y to enable sound support for Hi3660 with the Hi6403 codec.
+
+source "sound/soc/hisilicon/hi64xx/Kconfig"
+source "sound/soc/hisilicon/hi64xx_dsp/Kconfig"
+source "sound/soc/hisilicon/hifi_dsp/Kconfig"
+source "sound/soc/hisilicon/hifi_mailbox/Kconfig"
+source "sound/soc/hisilicon/slimbus/Kconfig"
+source "sound/soc/hisilicon/soundtrigger/Kconfig"
+
+endmenu

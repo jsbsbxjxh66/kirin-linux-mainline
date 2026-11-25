@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config VIDEO_HISI_VENC
+	tristate "Hisilicon Kirin 970 VENC support"
+	depends on ARCH_HISI
+	depends on OF
+	depends on IOMMU_SUPPORT
+	select IOMMU_IO_PGTABLE_LPAE
+	select DMA_SHARED_BUFFER
+	help
+	  Say Y here to enable the HiSilicon VEDU video encoder found on
+	  Kirin 970 (Hi3670).  The driver exposes the vendor OMX interface
+	  through /dev/hi_venc and uses the encoder's built-in SMMU with
+	  generic ARM LPAE page tables.

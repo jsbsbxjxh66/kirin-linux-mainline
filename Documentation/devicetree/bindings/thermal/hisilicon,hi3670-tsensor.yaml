@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/thermal/hisilicon,hi3670-tsensor.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Kirin970 TSENSOR
+
+maintainers:
+  - The Kirin970 mainline porting project
+
+description: |
+  The TSENSOR block on the Hisilicon Kirin970 (Hi3670) SoC provides
+  several on-die temperature sensors.  Its registers are only accessible
+  from secure firmware, so the operating system reads the sensors through
+  an SMC call.
+
+  The sensors are identified by an index, which is passed as the second
+  cell of the "thermal-sensors" property.  Indices 0, 1, 2 and 3 map to
+  the little cluster, the big cluster, the GPU and the modem respectively.
+
+properties:
+  compatible:
+    const: hisilicon,hi3670-tsensor
+
+  "#thermal-sensor-cells":
+    const: 1
+
+  hisilicon,adc-start-value:
+    description: ADC code corresponding to the minimum temperature (-40 C).
+    $ref: /schemas/types.yaml#/definitions/uint32
+
+  hisilicon,adc-end-value:
+    description: ADC code corresponding to the maximum temperature (125 C).
+    $ref: /schemas/types.yaml#/definitions/uint32
+
+required:
+  - compatible
+  - "#thermal-sensor-cells"
+  - hisilicon,adc-start-value
+  - hisilicon,adc-end-value
+
+additionalProperties: false
+
+examples:
+  - |
+    tsens: thermal-sensor {
+        compatible = "hisilicon,hi3670-tsensor";
+        #thermal-sensor-cells = <1>;
+        hisilicon,adc-start-value = <0x9a>;
+        hisilicon,adc-end-value = <0x398>;
+    };
+
+    thermal-zones {
+        cpu0-thermal {
+            polling-delay-passive = <250>;
+            polling-delay = <1000>;
+            thermal-sensors = <&tsens 0>;
+
+            trips {
+                cpu0-alert {
+                    temperature = <85000>;
+                    hysteresis = <2000>;
+                    type = "hot";
+                };
+
+                cpu0-crit {
+                    temperature = <105000>;
+                    hysteresis = <2000>;
+                    type = "critical";
+                };
+            };
+        };
+    };
+...

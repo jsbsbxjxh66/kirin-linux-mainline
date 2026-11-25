@@ -1,0 +1,4 @@
+source "drivers/power/hisi/huawei/battery/battery_ct/Kconfig"
+source "drivers/power/hisi/huawei/battery/battery_voltage/Kconfig"
+source "drivers/power/hisi/huawei/battery/battery_temp/Kconfig"
+source "drivers/power/hisi/huawei/battery/battery_type_identify/Kconfig"

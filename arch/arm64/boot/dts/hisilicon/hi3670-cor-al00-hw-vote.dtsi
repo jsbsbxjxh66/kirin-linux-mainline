@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * HiSilicon Kirin 970 hardware frequency vote channels.
+ */
+
+/ {
+	hw_vote: hw-vote@fff31000 {
+		compatible = "hisi,freq-hw-vote";
+		reg = <0x0 0xfff31000 0x0 0x1000>;
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		gpu-freq {
+			result_reg = <0x2dc 0xff0000 0xff0000>;
+			ratio = <0x10>;
+
+			vote-src-1 {
+				vote_reg = <0x290 0xff 0xff0000>;
+			};
+
+			vote-src-2 {
+				vote_reg = <0x290 0xff00 0xff000000>;
+			};
+		};
+
+		little-freq {
+			result_reg = <0x2dc 0xff00 0xff00>;
+			ratio = <0x10>;
+
+			vote-src-1 {
+				vote_reg = <0x280 0xff 0xff0000>;
+			};
+
+			vote-src-2 {
+				vote_reg = <0x280 0xff00 0xff000000>;
+			};
+		};
+
+		big-freq {
+			result_reg = <0x2dc 0xff 0xff>;
+			ratio = <0x10>;
+
+			vote-src-1 {
+				vote_reg = <0x270 0xff 0xff0000>;
+			};
+
+			vote-src-2 {
+				vote_reg = <0x270 0xff00 0xff000000>;
+			};
+		};
+	};
+};

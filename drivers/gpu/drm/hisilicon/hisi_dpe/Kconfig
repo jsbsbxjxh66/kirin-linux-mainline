@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config DRM_HISI_DPE
+	tristate "DRM support for HiSilicon Hi3670 DPE"
+	depends on DRM && ARM64
+	depends on OF
+	select DRM_CLIENT_SELECTION
+	select DRM_KMS_HELPER
+	select DRM_GEM_DMA_HELPER
+	select FB_DMAMEM_HELPERS if DRM_FBDEV_EMULATION
+	help
+	  Choose this option if you have a HiSilicon Hi3670 (Kirin 970)
+	  SoC with DPE (Display Processing Engine) display controller.
+	  This driver provides DRM/KMS support for the primary display
+	  output via MIPI DSI.
+
+	  If M is selected, the module will be called hisi_dpe.
+
+config DRM_HISI_DSI
+	tristate "DRM support for HiSilicon Hi3670 DSI Host"
+	depends on DRM && ARM64
+	depends on OF
+	select DRM_KMS_HELPER
+	select DRM_MIPI_DSI
+	select DRM_PANEL_BRIDGE
+	help
+	  Choose this option if you have a HiSilicon Hi3670 (Kirin 970)
+	  SoC with DesignWare DSI Host Controller v410.
+	  This driver provides MIPI DSI host support.
+
+	  If M is selected, the module will be called hisi_dpe_dsi.
+
+config DRM_PANEL_HISI_FT8719
+	tristate "HISI BOE FT8719 1080x2340 MIPI DSI panel"
+	depends on DRM && ARM64
+	depends on OF
+	select DRM_PANEL
+	help
+	  Say Y here if you want to enable support for the BOE FT8719
+	  1080x2340 MIPI DSI panel found in the Honor Play (COR-AL00).
+
+	  The symbol is named DRM_PANEL_HISI_FT8719 and the compatible is
+	  "hisi,ft8719" to keep it separate from upstream's
+	  DRM_PANEL_EBBG_FT8719 / "ebbg,ft8719".
+
+	  If M is selected, the module will be called panel-hisi-ft8719.
+
+config DRM_PANEL_HISI_TD4320
+	tristate "HISI BOE TD4320 1080x2340 MIPI DSI panel"
+	depends on DRM && ARM64
+	depends on OF && DRM_PANEL
+	help
+	  Say Y here if you want to enable support for the BOE TD4320
+	  1080x2340 MIPI DSI panel. This is the panel the COR-AL00 actually
+	  ships with - sys-fdt.dts's huawei,lcd_panel node reports
+	  lcd_panel_type = "boe_td4320_6p3_1080p_video" - and it shares the
+	  glass with the FT8719 variant but differs in its porches, its reset
+	  timing and its init sequence.
+
+	  The symbol is named DRM_PANEL_HISI_TD4320 and the compatible is
+	  "hisi,td4320" because upstream's DRM_PANEL_BOE_TD4320 /
+	  "boe,td4320" already targets the Xiaomi Redmi Note 7 with the same
+	  glass wired for 4 data lanes and video burst. Sharing either name
+	  would let both drivers fight over one DT node.
+
+	  If M is selected, the module will be called panel-hisi-td4320.

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0
+config VIDEO_HISI_JPU
+	tristate "Hisilicon JPEG processing unit (JPU) support"
+	depends on ARCH_HISI
+	depends on IOMMU_SUPPORT
+	select IOMMU_IO_PGTABLE_LPAE
+	select DMA_SHARED_BUFFER
+	help
+	  The decode device provides decode function for JPEG.

@@ -1,0 +1,281 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/soc/hisilicon/hisilicon,noc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: HiSilicon Network-on-Chip error monitor
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description: |
+  The HiSilicon Network-on-Chip (NoC) interconnects the CPU clusters with
+  the peripheral subsystems.  The NoC monitors latch the initiator and
+  target flow, the faulting address, the operation and the security
+  attributes of a failed transaction.  This binding describes the monitor
+  and the per-bus error probes.
+
+properties:
+  compatible:
+    const: hisilicon,noc
+
+  interrupts:
+    minItems: 1
+    maxItems: 2
+    description:
+      The first interrupt is the NoC error interrupt.  The optional second
+      interrupt is the NoC timeout interrupt.
+
+  interrupt-names:
+    minItems: 1
+    maxItems: 2
+    items:
+      enum:
+        - noc
+        - noc-timeout
+
+  "#address-cells":
+    const: 2
+
+  "#size-cells":
+    const: 2
+
+  ranges: true
+
+  platform_id:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Platform identifier used to select the per-SoC bus table.
+
+  pctrl-irq-mask:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    maxItems: 2
+    description: Interrupt status mask of the power control block.
+
+  pctrl-peri-stat0-offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Offset of the peripheral status 0 register.
+
+  pctrl-peri-stat3-offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Offset of the peripheral status 3 register.
+
+  smp_stop_cpu_bit_mask:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    maxItems: 2
+    description: Interrupt bit mask that stops the AP CPUs on a fatal error.
+
+  stop_cpu_bus_node_name:
+    $ref: /schemas/types.yaml#/definitions/string
+    description: Name of the bus whose fatal error stops the AP CPUs.
+
+  noc_acpu_init_flow_array:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    maxItems: 2
+    description: Mask and value identifying an AP CPU initiator flow.
+
+  faulten_default_enable:
+    $ref: /schemas/types.yaml#/definitions/flag
+    description: The boot firmware has already enabled the error probes.
+
+  error_enable:
+    $ref: /schemas/types.yaml#/definitions/flag
+    description: Enable the NoC error probes.
+
+  noc_timeout_enable:
+    $ref: /schemas/types.yaml#/definitions/flag
+    description: Enable the NoC timeout interrupt.
+
+  transcation_enable:
+    $ref: /schemas/types.yaml#/definitions/flag
+    description: Enable the NoC transaction probes.
+
+  packet_enable:
+    $ref: /schemas/types.yaml#/definitions/flag
+    description: Enable the NoC packet probes.
+
+  aobus_int_enable:
+    $ref: /schemas/types.yaml#/definitions/flag
+    description: Enable the AO bus error interrupt.
+
+  fama_enable:
+    $ref: /schemas/types.yaml#/definitions/flag
+    description: Enable the FAMA (fabric address map) error reporting.
+
+  fama-mask:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: FAMA status mask.
+
+  noc_debug:
+    $ref: /schemas/types.yaml#/definitions/flag
+    description: Enable verbose debug messages.
+
+  noc_irq_print_enable:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Print interrupts to the console when non-zero.
+
+  sctrl-second-int-mask-offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Offset of the second interrupt mask register in SCTRL.
+
+  sctrl-second-int-org-offset:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Offset of the original second interrupt register in SCTRL.
+
+  aobus_second_int_mask:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Second interrupt mask value for the AO bus.
+
+  noc_dump_reg:
+    type: object
+    description: Register windows dumped when a NoC error is reported.
+
+    properties:
+      compatible:
+        const: hisilicon,noc-dump-reg
+
+      reg-dump-nums:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: Number of register windows.
+
+      reg:
+        description: Register windows, one address/size pair per entry.
+
+    required:
+      - compatible
+      - reg
+      - reg-dump-nums
+
+  noc_targets_sub_list:
+    type: object
+    description: Names and address ranges of the NoC targets.
+
+    properties:
+      compatible:
+        const: hisilicon,noc-targets-sub-list
+
+      target_nums:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: Number of targets.
+
+      target_names:
+        $ref: /schemas/types.yaml#/definitions/string-array
+        description: Target names.
+
+      target_regs:
+        $ref: /schemas/types.yaml#/definitions/uint32-array
+        description: Target address ranges (start/end pairs).
+
+    required:
+      - compatible
+      - target_nums
+      - target_names
+      - target_regs
+
+  noc_err_probe_reg:
+    type: object
+    description: Register offsets of an error probe.
+
+    properties:
+      compatible:
+        const: hisilicon,noc-err-probe-reg
+
+      reg-list-nums:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: Number of register offsets.
+
+      reg-err-probe-list:
+        $ref: /schemas/types.yaml#/definitions/uint32-array
+        description: Error probe register offsets.
+
+    required:
+      - compatible
+      - reg-list-nums
+      - reg-err-probe-list
+
+  noc_state_reg:
+    type: object
+    description: Register offsets used to dump the NoC/power state.
+
+    properties:
+      compatible:
+        const: hisilicon,noc-reg-state-list
+
+      reg-list-nums:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: Number of register offsets.
+
+      reg-state-list:
+        $ref: /schemas/types.yaml#/definitions/uint32-array
+        description: State register offsets.
+
+    required:
+      - compatible
+      - reg-list-nums
+      - reg-state-list
+
+patternProperties:
+  '^[a-z0-9_]+@[0-9a-f]+$':
+    type: object
+    description: A NoC bus with an error, transaction or packet probe.
+
+    properties:
+      compatible:
+        const: hisilicon,noc-node
+
+      reg:
+        maxItems: 1
+        description: Register window of the bus monitor.
+
+      bus-name:
+        $ref: /schemas/types.yaml#/definitions/string
+        description: Name of the bus table this node belongs to.
+
+      eprobe-hwirq:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: Hardware interrupt index of the probe.
+
+      eprobe-offset:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: Offset of the probe registers.
+
+      eprobe-autoenable:
+        $ref: /schemas/types.yaml#/definitions/flag
+        description: Enable the probe automatically at boot.
+
+      hwirq-type:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: Probe type (0 = error, 1 = packet, 2 = transaction).
+
+      pwrack-bit:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: Power acknowledge bit for this bus.
+
+      crg_clk0:
+        $ref: /schemas/types.yaml#/definitions/uint32-array
+        maxItems: 2
+        description: Clock gate register offset and bit.
+
+      crg_clk1:
+        $ref: /schemas/types.yaml#/definitions/uint32-array
+        maxItems: 2
+        description: Clock gate register offset and bit.
+
+      crg_clk2:
+        $ref: /schemas/types.yaml#/definitions/uint32-array
+        maxItems: 2
+        description: Clock gate register offset and bit.
+
+    required:
+      - compatible
+      - reg
+      - bus-name
+
+required:
+  - compatible
+  - interrupts
+  - "#address-cells"
+  - "#size-cells"
+  - ranges
+
+additionalProperties: false

@@ -1,0 +1,113 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/display/hisilicon/hisi-dsi.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+title: HiSilicon Hi3670 DSI Host Controller
+
+description:
+  DesignWare DSI Host Controller v410 on HiSilicon Hi3670 (Kirin 970) SoC.
+
+properties:
+  compatible:
+    const: hisilicon,hi3670-dsi
+
+  reg:
+    items:
+      - description: DSI controller registers
+
+  clocks:
+    items:
+      - description: DSI APB clock
+
+  clock-names:
+    items:
+      - const: pclk
+
+  resets:
+    maxItems: 1
+
+  reset-names:
+    items:
+      - const: apb
+
+  dsi-bit-clk-mhz:
+    description: |
+      D-PHY DDR bit clock per lane in MHz. The lane data rate is twice this
+      value. The panel runs in burst mode, so this is not derived from the
+      pixel clock.
+
+  '#address-cells':
+    const: 1
+
+  '#size-cells':
+    const: 0
+
+  port:
+    $ref: /schemas/graph.yaml#/$defs/port-base
+    unevaluatedProperties: false
+    description: Input port connecting to the DPE output.
+
+  port@1:
+    $ref: /schemas/graph.yaml#/$defs/port-base
+    unevaluatedProperties: false
+    description: Output port connecting to the panel.
+
+patternProperties:
+  '^panel@[0-9]+$':
+    oneOf:
+      - $ref: /schemas/display/panel/hisi,td4320.yaml#
+      - $ref: /schemas/display/panel/hisi,ft8719.yaml#
+
+required:
+  - compatible
+  - reg
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - port
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/hi3670-clock.h>
+
+    soc {
+        #address-cells = <2>;
+        #size-cells = <2>;
+
+        dsi@e8601000 {
+            compatible = "hisilicon,hi3670-dsi";
+            reg = <0x0 0xe8601000 0x0 0x400>;
+
+            #address-cells = <1>;
+
+            clocks = <&crg_ctrl HI3670_PCLK_GATE_DSI0>;
+            clock-names = "pclk";
+
+            dsi-bit-clk-mhz = <562>;
+
+            resets = <&crg_rst 0x84 28>;
+            reset-names = "apb";
+
+            #size-cells = <0>;
+
+            port {
+                endpoint {
+                };
+            };
+
+            port@1 {
+                reg = <1>;
+
+                endpoint {
+                };
+            };
+        };
+    };

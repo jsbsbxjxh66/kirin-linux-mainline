@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/sound/hisilicon,slimbus-dai.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon SLIMbus CPU DAI
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The SLIMbus CPU DAI is a virtual platform device that connects the
+  Hisilicon SLIMbus controller to the ASoC Hi6403 sound card.
+
+properties:
+  compatible:
+    const: hisilicon,slimbus-dai
+
+required:
+  - compatible
+
+additionalProperties: false

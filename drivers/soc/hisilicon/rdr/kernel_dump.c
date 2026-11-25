@@ -1,0 +1,182 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ *  kernel/drivers/hisi/memory_dump/Kernel_dump.c
+ *
+ * balong memory/register proc-fs  dump implementation
+ *
+ * Copyright (C) 2012 Hisilicon, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+#include <asm/pgtable.h>
+#include <asm/sections.h>
+#include <linux/mm_types.h>
+#include <linux/memblock.h>
+#include <linux/percpu.h>
+#include <linux/mm.h>
+#include <linux/printk.h>
+#include <asm/memory.h>
+#include "kernel_dump.h"
+#include <linux/hisi/mntn_dump.h>
+#include <linux/module.h>
+#include <linux/slab.h>
+#include <linux/rculist.h>
+#include <linux/kernel.h>
+#include <linux/version.h>
+#include <linux/hisi/hisi_log.h>
+#define HISI_LOG_TAG MEMORY_DUMP_TAG
+
+/* the max size of mod->core_size is 4M */
+#define MODULE_MAX_CORE_SIZE (4 * 1024 * 1024)
+
+struct kernel_dump_cb *g_kdump_cb;
+static struct table_extra {
+	u64 extra_mem_phy_base;
+	u64 extra_mem_virt_base;
+	u64 extra_mem_size;
+} g_tbl_extra_mem[MAX_EXTRA_MEM] = {{0, 0} };
+static unsigned int extra_index;
+static DEFINE_RAW_SPINLOCK(g_kdump_lock);
+
+static u32 checksum32(u32 *addr, u32 count)
+{
+	u64 sum = 0;
+	u32 i;
+
+	while (count > sizeof(u32) - 1) {
+		/*  This is the inner loop */
+		sum += *(addr++);
+		count -= sizeof(u32);
+	}
+
+	if (count > 0) {
+		u32 left = 0;
+
+		i = 0;
+		while (i <= count) {
+			*((u8 *)&left + i) = *((u8 *)addr + i);
+			i++;
+		}
+
+		sum += left;
+	}
+
+	while (sum >> 32)
+		sum = (sum & 0xffffffff) + (sum >> 32);
+
+	return (~sum);
+}
+
+static int add_mem2table(u64 va, u64 pa, u64 size, bool need_crc)
+{
+	unsigned int i;
+	bool crc_check = false;
+
+	if (!pa || !va || !size || extra_index >= MAX_EXTRA_MEM)
+		return -1;
+
+	raw_spin_lock(&g_kdump_lock);
+	/* Kernel dump is not inited */
+	if (!g_kdump_cb) {
+		g_tbl_extra_mem[extra_index].extra_mem_phy_base = pa;
+		g_tbl_extra_mem[extra_index].extra_mem_virt_base = va;
+		g_tbl_extra_mem[extra_index].extra_mem_size = size;
+		extra_index++;
+	} else {
+		i = extra_index;
+		if (i < MAX_EXTRA_MEM) {
+			g_kdump_cb->extra_mem_phy_base[i] = pa;
+			g_kdump_cb->extra_mem_virt_base[i] = va;
+			g_kdump_cb->extra_mem_size[i] = size;
+			extra_index += 1;
+
+			crc_check = true;
+		} else {
+			pr_err("%s: extra memory(nums:%d) is out of range. \r\n",
+			       __func__, extra_index);
+			goto err;
+		}
+	}
+
+	if (need_crc && crc_check) {
+		g_kdump_cb->crc = 0;
+		g_kdump_cb->crc = checksum32((u32 *)g_kdump_cb, sizeof(struct kernel_dump_cb));
+	}
+
+	raw_spin_unlock(&g_kdump_lock);
+	return 0;
+err:
+	raw_spin_unlock(&g_kdump_lock);
+	return -1;
+}
+
+int add_extra_table(u64 pa, u64 size)
+{
+	return add_mem2table((uintptr_t)phys_to_virt(pa), pa, size, true);
+}
+
+static int kernel_dump_init(void)
+{
+	unsigned int i, j;
+	struct kernel_dump_cb *cb;
+
+	if (register_mntn_dump(MNTN_DUMP_KERNEL_DUMP, sizeof(struct kernel_dump_cb),
+			       (void **)&cb)) {
+		pr_err("%s: fail to get reserve memory\r\n", __func__);
+		goto err;
+	}
+	memset((void *)cb, 0, sizeof(struct kernel_dump_cb));
+	cb->magic = KERNELDUMP_CB_MAGIC;
+	cb->page_shift = PAGE_SHIFT;
+	cb->struct_page_size = sizeof(struct page);
+	cb->phys_offset = memblock_start_of_DRAM();
+	cb->kernel_offset = (u64)_text;
+	cb->page_offset = PAGE_OFFSET;/*lint !e648*/
+	cb->extra_mem_phy_base[0] = virt_to_phys(_text);
+	cb->extra_mem_virt_base[0] = (u64)_text;
+	cb->extra_mem_size[0] = ALIGN(_end - _text, PAGE_SIZE);
+	cb->extra_mem_phy_base[1] = virt_to_phys(pcpu_base_addr); /* per cpu info*/
+	cb->extra_mem_virt_base[1] = (uintptr_t)pcpu_base_addr; /* per cpu info*/
+	cb->extra_mem_size[1] = (u64)pcpu_nr_pages() << PAGE_SHIFT;
+	for (i = 2, j = 0; i < MAX_EXTRA_MEM && j < extra_index; i++, j++) {
+		cb->extra_mem_phy_base[i] = g_tbl_extra_mem[j].extra_mem_phy_base;
+		cb->extra_mem_virt_base[i] = g_tbl_extra_mem[j].extra_mem_virt_base;
+		cb->extra_mem_size[i] = g_tbl_extra_mem[j].extra_mem_size;
+	}
+	extra_index = i;
+	cb->page = mem_map;
+	cb->pfn_offset = PHYS_PFN_OFFSET;
+	cb->section_size = 0;
+	/* Subtract the base address that TTBR1 maps */
+	cb->kern_map_offset = (UL(0xffffffffffffffff) << VA_BITS);/*lint !e648*/
+
+	cb->ttbr = virt_to_phys(init_mm.pgd);
+
+	cb->mb_cb = (struct memblock_type *)(uintptr_t)virt_to_phys(&memblock.memory);
+	cb->mbr_size = sizeof(struct memblock_region);
+
+	cb->text_kaslr_offset = kaslr_offset();
+	cb->linear_kaslr_offset = (u64)__va(memblock_start_of_DRAM()) - PAGE_OFFSET;
+	g_kdump_cb = cb;
+
+	cb->crc = 0;
+	cb->crc = checksum32((u32 *)cb, sizeof(struct kernel_dump_cb));
+
+	return 0;
+err:
+	return -1;
+}
+early_initcall(kernel_dump_init);
+

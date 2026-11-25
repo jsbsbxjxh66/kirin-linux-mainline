@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config HISI_IVP
+	bool "Hisilicon IVP NPU support"
+	depends on ARCH_HISI || COMPILE_TEST
+	depends on IOMMU_API
+	depends on ARM64
+	help
+	  Support for the Hisilicon IVP DSP/NPU found on Kirin 970.
+	  This provides the platform, SMMU, IPC and character-device
+	  interfaces. The firmware and userspace runtime are still
+	  required for actual inference.

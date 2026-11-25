@@ -1,0 +1,25 @@
+
+config POWER_HISI
+	bool "Hisilicon power management drivers"
+	depends on ARCH_HISI
+	default n
+	help
+	  Support for the Hisilicon/Kirin battery, coulomb counter and
+	  charger drivers used on the Kirin 970 platform.
+
+if POWER_HISI
+
+config HISI_BATTERY_DATA
+	bool "hisi battery data"
+	default n
+
+config HISI_BCI_BATTERY
+        bool "hisi bci battery"
+        default n
+
+source "drivers/power/hisi/charger/Kconfig"
+source "drivers/power/hisi/coul/Kconfig"
+source "drivers/power/hisi/soh/Kconfig"
+source "drivers/power/hisi/asw/Kconfig"
+source "drivers/power/hisi/huawei/Kconfig"
+endif # POWER_HISI

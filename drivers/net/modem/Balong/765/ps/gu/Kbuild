@@ -1,0 +1,136 @@
+PSDIR = ..
+MODEM_DIR := $(srctree)/$(src)/../..
+-include $(MODEM_DIR)/config/product/$(OBB_PRODUCT_NAME)/config/balong_product_config.mk
+
+ifeq ($(TARGET_ARM_TYPE), arm64)
+# Mainline dropped EXTRA_CFLAGS support (scripts/Makefile.lib no longer
+# does 'ccflags-y += $(EXTRA_CFLAGS)'); the whole include list would
+# vanish silently.  ccflags-y is the modern equivalent.
+ccflags-y += -Iarch/arm64/include/asm
+else
+ccflags-y += -Iarch/arm/include/asm
+endif
+ccflags-y += -Iinclude/linux
+ccflags-y += -Iinclude/generated
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/gu/comm/osa
+ccflags-y += -I$(MODEM_DIR)/include/oam/comm/om
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/gu/acore/cbtcpm
+ccflags-y += -I$(MODEM_DIR)/include/oam/gu/comm/om
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/gu/comm/si
+ccflags-y += -I$(MODEM_DIR)/include/oam/gu/comm/usimm
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/comm/nvim
+ccflags-y += -I$(MODEM_DIR)/include/oam/lt/acore/
+ccflags-y += -I$(MODEM_DIR)/include/oam/lt/common/
+ccflags-y += -I$(MODEM_DIR)/include/taf/acore
+ccflags-y += -I$(MODEM_DIR)/include/taf/common
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/ps/tlps/acore
+ccflags-y += -I$(MODEM_DIR)/include/ps/tlps/common
+ccflags-y += -I$(MODEM_DIR)/include/ps/gups/acore
+ccflags-y += -I$(MODEM_DIR)/include/ps/gups/common
+ccflags-y += -I$(MODEM_DIR)/include/nv/acore/guc_nas
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/guc_nas
+ccflags-y += -I$(MODEM_DIR)/include/nv/acore/guc_as
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/guc_as
+ccflags-y += -I$(MODEM_DIR)/include/nv/acore/msp
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/msp
+ccflags-y += -I$(MODEM_DIR)/include/nv/acore/drv
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/drv
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/pam
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/sys
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/tl_as
+ccflags-y += -I$(MODEM_DIR)/config/osa
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/common
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/acore
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/common/LINK/Inc
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/common/LOGFILTER/Inc
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/acore/LOGFILTER/Inc
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/common/FLOWCTRL/Inc
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/acore/FLOWCTRL/Inc
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/acore/IMM/Inc
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/acore/NDIS/Inc
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/common/ND/IPCOMM/Inc
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/acore/ND/NDSERVER/Inc
+ccflags-y += 
+# Android resolved "soc_sctrl_interface.h" through a global -I added by
+# its top-level Makefile (Makefile:422); ours may not be edited, so put the
+# equivalent path on this Kbuild instead.
+ccflags-y += -I$(srctree)/include/linux/hisi/kirin970
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/acore/PPP/Inc
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/common/STL/Inc
+ccflags-y += -I$(MODEM_DIR)/ps/comm/comm/common/IP/Inc
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/acore/om
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/comm/om
+
+ccflags-y +=  -DVOS_LINUX=4 -DOSA_CPU_ACPU=1 -DVOS_OS_VER=VOS_LINUX -DVOS_OSA_CPU=OSA_CPU_ACPU -D__LOG_RELEASE__ -DBSP_CORE_APP -DGU_MODE -DMSP_SUPPORT_USB_VCOM1 -DMSP_SUPPORT_USB_VCOM2 -DVOS_DOPRA_VER=2 -DNDIS_RELEASE -DBALONG_PHY_V200=2 -DBALONG_PHY_V300=3 -DBALONG_PHY_VER=BALONG_PHY_V300 -DBALONG_CHIP_V200=2 -DBALONG_CHIP_V300=3 -DBALONG_CHIP_V500=4 -DBALONG_CHIP_VER=BALONG_CHIP_V500 -DMSP_GUNAS_AT_UNITE
+ifneq ($(TARGET_ARM_TYPE), arm64)
+ccflags-y += -D__LINUX_ARM_ARCH__=7 -march=armv7-a -Uarm
+endif
+
+ccflags-y += -fsigned-char 
+
+gups-objs := $(PSDIR)/comm/comm/acore/DIPC/Src/PsDipc.o
+gups-objs += $(PSDIR)/comm/comm/acore/MUX/Src/PsMux.o
+gups-objs += $(PSDIR)/comm/comm/acore/FLOWCTRL/Src/ACpuLoad.o
+gups-objs += $(PSDIR)/comm/comm/common/FLOWCTRL/Src/Fc.o
+gups-objs += $(PSDIR)/comm/comm/common/LOGFILTER/Src/PsLogFilterComm.o
+gups-objs += $(PSDIR)/comm/comm/acore/LOGFILTER/Src/PsAcpuLogFilter.o
+gups-objs += $(PSDIR)/comm/comm/acore/FLOWCTRL/Src/FcACore.o
+gups-objs += $(PSDIR)/comm/comm/acore/FLOWCTRL/Src/FcACoreCReset.o
+gups-objs += $(PSDIR)/comm/comm/acore/IMM/Src/IMMmemZC.o
+gups-objs += $(PSDIR)/comm/comm/common/IP/Src/TtfIpComm.o
+
+gups-objs += $(PSDIR)/comm/comm/common/LINK/Src/TTFUtil.o
+
+ifeq ($(CFG_FEATURE_PPP),FEATURE_ON)
+
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/acf.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/async.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/auth.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/chap.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/hdlc.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/ipcp.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/lcp.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/link.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/pap.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/ppp_fsm.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/ppp_mbuf.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/ppp_public.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/pppid.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/proto.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/throughput.o
+ifeq ($(CFG_FEATURE_HARDWARE_HDLC_FUNC),FEATURE_ON)
+gups-objs += $(PSDIR)/comm/comm/common/PPP/Src/hdlc_hardware_service.o
+gups-objs += $(PSDIR)/comm/comm/common/PPP/Src/hdlc_hardware_driver.o
+gups-objs += $(PSDIR)/comm/comm/common/PPP/Src/hdlc_hardware_mntn.o
+gups-objs += $(PSDIR)/comm/comm/common/PPP/Src/hdlc_hardware_conf.o
+else
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/hdlc_software.o
+endif
+
+endif
+
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/ppp_atcmd.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/ppp_init.o
+gups-objs += $(PSDIR)/comm/comm/acore/PPP/Src/ppp_input.o
+
+gups-objs += $(PSDIR)/comm/comm/acore/NFEXT/IpsMntn.o
+gups-objs += $(PSDIR)/comm/comm/acore/NFEXT/NetfilterEx.o
+gups-objs += $(PSDIR)/comm/comm/acore/NFEXT/NetfilterExCtrl.o
+gups-objs += $(PSDIR)/comm/comm/acore/HISOCKET/Src/hisocket.o
+
+obj-y  := gups.o
+
+
+

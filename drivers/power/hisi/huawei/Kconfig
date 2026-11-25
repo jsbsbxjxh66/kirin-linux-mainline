@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+source "drivers/power/hisi/huawei/power_mesg/Kconfig"
+source "drivers/power/hisi/huawei/charger/Kconfig"
+source "drivers/power/hisi/huawei/battery/Kconfig"

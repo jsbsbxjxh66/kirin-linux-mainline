@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/power/supply/hisilicon,hi6421v600-coul.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi6421v600 PMIC coulomb counter
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The Hi6421v600 PMIC coulomb counter reports battery charge and the
+  battery insertion/removal interrupt.
+
+properties:
+  compatible:
+    const: hisilicon,hi6421v600-coul
+
+  interrupts:
+    maxItems: 1
+
+  interrupt-names:
+    const: coulirq
+
+required:
+  - compatible
+  - interrupts
+  - interrupt-names
+
+additionalProperties: false

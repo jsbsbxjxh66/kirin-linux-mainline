@@ -1,0 +1,9 @@
+
+config PMIC_OCP
+	bool "Balong PMIC OCP forwarding"
+	depends on HI6421V600_MNTN
+	default n
+	help
+	  Forward PMIC OCP events for modem rails over ICC so that the modem
+	  can log and recover from a rail fault before the AP applies its
+	  generic OCP policy.

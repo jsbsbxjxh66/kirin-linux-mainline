@@ -1,0 +1,802 @@
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
+ * Hisilicon Kirin 970 (Hi3670) Balong in-SoC cellular baseband co-processor,
+ * AP side.
+ *
+ * Device nodes for the AP-side Balong modem drivers in
+ * drivers/modem/hisi/.  Values are taken from the retail device tree
+ * (sys-fdt.dts, COR-AL00) so they match the real hardware; they are not
+ * re-derived.
+ *
+ * Only the nodes for the drivers actually ported so far are included:
+ *   ipc     - "hisilicon,ipc_balong_app" / "_s"  (drv/ipc)
+ *   icc     - "hisilicon,icc_balong_app"          (drv/icc)
+ *   socp    - "hisilicon,socp_balong_app" / memalloc (drv/socp)
+ *   sysctrl - "hisilicon,sysctrl_app"             (drv/sysctrl)
+ *   reset   - "hisilicon,cp_reset_app"            (drv/reset)
+ *   ipf     - "hisilicon,ipf_balong_app"          (drv/n_ipf)
+ *   psam    - "hisilicon,psam_balong_app"         (drv/n_psam)
+ *   aux     - hds/mperf/smntn_type/ap_sec_access_mdmddr
+ *   wdt     - "hisilicon,watchdog_app"            (CP dump hook)
+ *   pmic_ocp - "hisilicon,pmic_ocp_modem"         (PMIC rail OCP to ICC)
+ *
+ * onoff/nvim do not need DT nodes; hifi/deflate still lack complete mainline
+ * bindings and are intentionally left out.
+ */
+
+/ {
+	/* DDR reserved region for the SOCP log ring (socp driver). */
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		mdmlog_memory: mdmlog {
+			size = <0x0 0x3200000>;          /* 50 MiB */
+			alignment = <0x0 0x100000>;
+			alloc-ranges = <0x0 0x0 0x1 0x0>;
+			compatible = "hisi_mdmlog";
+			no-map;
+		};
+	};
+
+	/*
+	 * IPC (inter-processor communication) between the AP and the modem CCPU.
+	 * Two register blocks: the AP-facing one and the secure one.
+	 */
+	ipc_hisi_modem: ipc_hisi_modem@ff011000 {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "hisilicon,ipc_balong_app";
+		reg = <0x0 0xff011000 0x0 0x1000>;
+		interrupts = <0 154 4>, <0 155 4>;
+		status = "ok";
+	};
+
+	ipc_hisi_modem_s: ipc_hisi_modem_s@ff010000 {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "hisilicon,ipc_balong_app_s";
+		reg = <0x0 0xff010000 0x0 0x1000>;
+		interrupts = <0 310 4>, <0 311 4>;
+		status = "ok";
+	};
+
+	/*
+	 * AO IPC block used by the Balong IPC message layer.  The driver
+	 * resolves this node separately from ipc_balong_app; without it
+	 * ipc_msg_init() fails and the whole IPC probe aborts.
+	 */
+	ipc_hisi_v230_mdm: ipc_hisi_v230_mdm@fff21000 {
+		compatible = "hisilicon,ipc_v230_app";
+		reg = <0x0 0xfff21000 0x0 0x1000>;
+		src_id = <4>;
+		recv_mbx_id = <8>;
+		status = "ok";
+	};
+
+	/*
+	 * Modem reset control.  scbakdata13 is the SCTRL AO scratch offset
+	 * used to persist the reset reason across a CCPU reset.
+	 */
+	cp_reset_app: cp_reset_app {
+		compatible = "hisilicon,cp_reset_app";
+		scbakdata13 = <0x440>;
+		status = "ok";
+	};
+
+	/* Modem HDS logging channel; probe only needs the compatible. */
+	hds_balong: hds_balong {
+		compatible = "hisilicon,hds_balong";
+		status = "ok";
+	};
+
+	/* mperf event source; the driver only consumes nr_cpus. */
+	mperf_balong: mperf_balong {
+		compatible = "hisilicon,mperf_balong";
+		nr_cpus = <2>;
+		status = "ok";
+	};
+
+	/* Product/security knobs consumed by the modem dump config. */
+	smntn_type: smntn_type {
+		compatible = "hisilicon,smntn_type";
+		product_type = "PHONE";
+	};
+
+	ap_sec_access_mdmddr: ap_sec_access_mdmddr {
+		compatible = "hisilicon,ap_sec_access_mdmddr";
+		ap_sec_access_mdmddr = <0>;
+		status = "ok";
+	};
+
+	/*
+	 * Base-address and IRQ lookup table consumed by drv/hwadp.  Values
+	 * are copied verbatim from the vendor sys-fdt.dts; disabled children
+	 * are retained so the table stays a faithful hardware description.
+	 */
+	hardware_adapt: hardware_adapt {
+		compatible = "hisilicon,hardware_adapt";
+		#address-cells = <0x02>;
+		#size-cells = <0x02>;
+		ranges;
+
+		cicom0@e0440000 {
+			compatible = "hisilicon,cicom0";
+			reg = <0x00 0xe0440000 0x00 0x1000>;
+			ip_type = <0x01>;
+		};
+
+		cicom1@e0443000 {
+			compatible = "hisilicon,cicom1";
+			reg = <0x00 0xe0443000 0x00 0x1000>;
+			ip_type = <0x02>;
+			status = "disabled";
+		};
+
+		hdlc_framer@e0442000 {
+			compatible = "hisilicon,hdlc_framer";
+			reg = <0x00 0xe0442000 0x00 0x1000>;
+			ip_type = <0x03>;
+		};
+
+		bbpmaster@e1f20000 {
+			compatible = "hisilicon,bbpmaster";
+			reg = <0x00 0xe1f20000 0x00 0x00>;
+			ip_type = <0x04>;
+		};
+
+		ahb@38034000 {
+			compatible = "hisilicon,ahb";
+			reg = <0x00 0x38034000 0x00 0x00>;
+			ip_type = <0x07>;
+			status = "disabled";
+		};
+
+		wbbp@e1a00000 {
+			compatible = "hisilicon,wbbp";
+			reg = <0x00 0xe1a00000 0x00 0x00>;
+			ip_type = <0x08>;
+		};
+
+		wbbp_drx_sft@fff12000 {
+			compatible = "hisilicon,wbbp_drx_sft";
+			reg = <0x00 0xfff12000 0x00 0x00>;
+			ip_type = <0x09>;
+		};
+
+		wbbp_drx@fff12000 {
+			compatible = "hisilicon,wbbp_drx";
+			reg = <0x00 0xfff12000 0x00 0x00>;
+			ip_type = <0x09>;
+			status = "disabled";
+		};
+
+		gbbp@e1800000 {
+			compatible = "hisilicon,gbbp";
+			reg = <0x00 0xe1800000 0x00 0x00>;
+			ip_type = <0x0a>;
+		};
+
+		gbbp_drx_sft@fff12800 {
+			compatible = "hisilicon,gbbp_drx_sft";
+			reg = <0x00 0xfff12800 0x00 0x00>;
+			ip_type = <0x0b>;
+		};
+
+		gbbp_drx@fff12800 {
+			compatible = "hisilicon,gbbp_drx";
+			reg = <0x00 0xfff12800 0x00 0x00>;
+			ip_type = <0x0b>;
+			status = "disabled";
+		};
+
+		gbbp1@e1880000 {
+			compatible = "hisilicon,gbbp1";
+			reg = <0x00 0xe1880000 0x00 0x00>;
+			ip_type = <0x0c>;
+		};
+
+		gbbp_drx1_sft@fff12c00 {
+			compatible = "hisilicon,gbbp_drx1_sft";
+			reg = <0x00 0xfff12c00 0x00 0x00>;
+			ip_type = <0x0d>;
+		};
+
+		gbbp_drx1@fff12c00 {
+			compatible = "hisilicon,gbbp_drx1";
+			reg = <0x00 0xfff12c00 0x00 0x00>;
+			ip_type = <0x0d>;
+			status = "disabled";
+		};
+
+		ctu@e1f58000 {
+			compatible = "hisilicon,ctu";
+			reg = <0x00 0xe1f58000 0x00 0x00>;
+			ip_type = <0x12>;
+		};
+
+		tdssys@e1b00000 {
+			compatible = "hisilicon,tdssys";
+			reg = <0x00 0xe1b00000 0x00 0x00>;
+			ip_type = <0x13>;
+		};
+
+		upacc@e0453000 {
+			compatible = "hisilicon,upacc";
+			reg = <0x00 0xe0453000 0x00 0x1000>;
+			ip_type = <0x1e>;
+		};
+
+		harq@ea000000 {
+			compatible = "hisilicon,harq";
+			reg = <0x00 0xea000000 0x00 0x1000>;
+			ip_type = <0x1f>;
+			status = "disabled";
+		};
+
+		peri_sysctrl@e8a09000 {
+			compatible = "hisilicon,peri_sysctrl";
+			reg = <0x00 0xe8a09000 0x00 0x1000>;
+			ip_type = <0x20>;
+			status = "disabled";
+		};
+
+		int8 {
+			compatible = "hisilicon,int8";
+			interrupts = <0x00 0x13 0x04>;
+			int_type = <0x08>;
+		};
+
+		int9 {
+			compatible = "hisilicon,int9";
+			interrupts = <0x00 0x14 0x04>;
+			int_type = <0x09>;
+		};
+
+		int10 {
+			compatible = "hisilicon,int10";
+			interrupts = <0x00 0x15 0x04>;
+			int_type = <0x0a>;
+		};
+
+		int11 {
+			compatible = "hisilicon,int11";
+			interrupts = <0x00 0x16 0x04>;
+			int_type = <0x0b>;
+		};
+
+		int14 {
+			compatible = "hisilicon,int14";
+			interrupts = <0x00 0x24 0x04>;
+			int_type = <0x0e>;
+		};
+
+		int15 {
+			compatible = "hisilicon,int15";
+			interrupts = <0x00 0x26 0x04>;
+			int_type = <0x0f>;
+		};
+
+		int16 {
+			compatible = "hisilicon,int16";
+			interrupts = <0x00 0x25 0x04>;
+			int_type = <0x10>;
+		};
+
+		int17 {
+			compatible = "hisilicon,int17";
+			interrupts = <0x00 0x27 0x04>;
+			int_type = <0x11>;
+		};
+
+		int18 {
+			compatible = "hisilicon,int18";
+			interrupts = <0x00 0x28 0x04>;
+			int_type = <0x12>;
+		};
+
+		int19 {
+			compatible = "hisilicon,int19";
+			interrupts = <0x00 0x2a 0x04>;
+			int_type = <0x13>;
+		};
+
+		int20 {
+			compatible = "hisilicon,int20";
+			interrupts = <0x00 0x29 0x04>;
+			int_type = <0x14>;
+		};
+
+		int21 {
+			compatible = "hisilicon,int21";
+			interrupts = <0x00 0x2b 0x04>;
+			int_type = <0x15>;
+		};
+
+		int22 {
+			compatible = "hisilicon,int22";
+			interrupts = <0x00 0x82 0x04>;
+			int_type = <0x16>;
+		};
+
+		int23 {
+			compatible = "hisilicon,int23";
+			interrupts = <0x00 0x83 0x04>;
+			int_type = <0x17>;
+		};
+
+		int24 {
+			compatible = "hisilicon,int24";
+			interrupts = <0x00 0x84 0x04>;
+			int_type = <0x18>;
+		};
+
+		int25 {
+			compatible = "hisilicon,int25";
+			interrupts = <0x00 0x85 0x04>;
+			int_type = <0x19>;
+		};
+
+		int26 {
+			compatible = "hisilicon,int26";
+			interrupts = <0x00 0x86 0x04>;
+			int_type = <0x1a>;
+		};
+
+		int27 {
+			compatible = "hisilicon,int27";
+			interrupts = <0x00 0x87 0x04>;
+			int_type = <0x1b>;
+		};
+
+		int28 {
+			compatible = "hisilicon,int28";
+			interrupts = <0x00 0x88 0x04>;
+			int_type = <0x1c>;
+		};
+
+		int29 {
+			compatible = "hisilicon,int29";
+			interrupts = <0x00 0x89 0x04>;
+			int_type = <0x1d>;
+		};
+
+		int30 {
+			compatible = "hisilicon,int30";
+			interrupts = <0x00 0x8a 0x04>;
+			int_type = <0x1e>;
+		};
+
+		int31 {
+			compatible = "hisilicon,int31";
+			interrupts = <0x00 0x8b 0x04>;
+			int_type = <0x1f>;
+		};
+
+		int32 {
+			compatible = "hisilicon,int32";
+			interrupts = <0x00 0x8c 0x04>;
+			int_type = <0x20>;
+		};
+
+		int33 {
+			compatible = "hisilicon,int33";
+			interrupts = <0x00 0x78 0x04>;
+			int_type = <0x21>;
+		};
+
+		int42 {
+			compatible = "hisilicon,int42";
+			interrupts = <0x00 0x8e 0x04>;
+			int_type = <0x2a>;
+		};
+
+		int43 {
+			compatible = "hisilicon,int43";
+			interrupts = <0x00 0x8f 0x04>;
+			int_type = <0x2b>;
+		};
+
+		int46 {
+			compatible = "hisilicon,int46";
+			interrupts = <0x00 0x17 0x04>;
+			int_type = <0x2e>;
+		};
+
+		int47 {
+			compatible = "hisilicon,int47";
+			interrupts = <0x00 0x27 0x04>;
+			int_type = <0x2f>;
+		};
+
+		int65 {
+			compatible = "hisilicon,int65";
+			interrupts = <0x00 0x25 0x04>;
+			int_type = <0x41>;
+		};
+
+		int66 {
+			compatible = "hisilicon,int66";
+			interrupts = <0x00 0x85 0x04>;
+			int_type = <0x42>;
+		};
+
+		int67 {
+			compatible = "hisilicon,int67";
+			interrupts = <0x00 0x86 0x04>;
+			int_type = <0x43>;
+		};
+
+		int68 {
+			compatible = "hisilicon,int68";
+			interrupts = <0x00 0x87 0x04>;
+			int_type = <0x44>;
+		};
+
+		int69 {
+			compatible = "hisilicon,int69";
+			interrupts = <0x00 0x88 0x04>;
+			int_type = <0x45>;
+		};
+
+		int70 {
+			compatible = "hisilicon,int70";
+			interrupts = <0x00 0x89 0x04>;
+			int_type = <0x46>;
+		};
+
+		int71 {
+			compatible = "hisilicon,int71";
+			interrupts = <0x00 0x8a 0x04>;
+			int_type = <0x47>;
+		};
+
+		int72 {
+			compatible = "hisilicon,int72";
+			interrupts = <0x00 0x8b 0x04>;
+			int_type = <0x48>;
+		};
+
+		int73 {
+			compatible = "hisilicon,int73";
+			interrupts = <0x00 0x8c 0x04>;
+			int_type = <0x49>;
+		};
+
+		hdlc_deframer_int {
+			compatible = "hisilicon,hdlc_deframer_int";
+			interrupts = <0x00 0x19 0x04>;
+			int_type = <0x0c>;
+		};
+
+		hdlc_framer_int {
+			compatible = "hisilicon,hdlc_framer_int";
+			interrupts = <0x00 0x18 0x04>;
+			int_type = <0x0d>;
+		};
+	};
+
+	/*
+	 * Modem watchdog interrupt, consumed by the CP dump hook so a CCPU
+	 * watchdog bite can be recorded before reset.  The AP-side watchdog
+	 * driver itself is not enabled.
+	 */
+	watchdog_app: watchdog_app {
+		compatible = "hisilicon,watchdog_app";
+		interrupts = <0x0 0xd1 0x4>;
+		flag = <0x1>;
+		status = "okay";
+	};
+
+	/*
+	 * IPF/PSAM offload engines.  Both gates live in CRG PEREN0 bits 7/8;
+	 * the mainline CRG driver exposes them as clk_gate_ipf and
+	 * clk_gate_ipf_psam.
+	 */
+	ipf1: ipf@ff038000 {
+		compatible = "hisilicon,ipf_balong_app";
+		reg = <0x0 0xff038000 0x0 0x8000>;
+		interrupts = <0x0 0xde 0x4>;
+		clocks = <&crg_ctrl HI3670_CLK_GATE_IPF>;
+		clock-names = "ipf_clk";
+		rst_crg = <0xfff35000 0x84 0x88 0x8c 0x2000000>;
+		status = "okay";
+	};
+
+	psam1: psam@ff040000 {
+		compatible = "hisilicon,psam_balong_app";
+		reg = <0x0 0xff040000 0x0 0x10000>;
+		interrupts = <0x0 0x11e 0x4>;
+		clocks = <&crg_ctrl HI3670_CLK_GATE_IPF_PSAM>;
+		clock-names = "psam_aclk";
+		idle_ctrl = <0xe8a09000 0xa4 0x1>;
+		status = "okay";
+	};
+
+	/*
+	 * sysctrl register-address table: three 4 KiB blocks that the driver
+	 * ioremaps and exposes by index (bsp_sysctrl_addr_byindex).  reg_sum
+	 * must match the number of reg entries.
+	 */
+	sysctrl_app: sysctrl_app {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "hisilicon,sysctrl_app";
+		reg = <0x0 0xfff0a000 0x0 0x1000>,
+		      <0x0 0xfff0a000 0x0 0x1000>,
+		      <0x0 0xe0200000 0x0 0x1000>;
+		reg_sum = <3>;
+	};
+
+	/*
+	 * ICC channels (AP <-> CCPU).  Each child's cfg is
+	 * <id mode fifo_size tx_ipc rx_ipc func_size rx_fifo_first>; the driver
+	 * walks the tree (icc_channels_init) and builds a channel per child.
+	 */
+	icc_channels_app {
+		compatible = "hisilicon,icc_balong_app";
+
+		icc_channels_sddr_app {
+			ref = "sddr";
+			plus_size = <20>;
+
+			icc_channel_drv {                 /* A<->C */
+				ch_name = "DRV";
+				cfg = <0 0x3 0x1000 31 6 50 1>;
+				status = "ok";
+			};
+			icc_channel_rfile {               /* A<->C */
+				ch_name = "RFILE";
+				cfg = <1 0x3 0x1000 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_nv {                  /* A<->C */
+				ch_name = "NV";
+				cfg = <2 0x3 0x1000 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_guom0 {               /* A<->C */
+				ch_name = "GUOM0";
+				cfg = <3 0x3 0x4000 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_guom1 {               /* A<->C */
+				ch_name = "GUOM1";
+				cfg = <4 0x3 0x0 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_guom2 {               /* A<->C */
+				ch_name = "GUOM2";
+				cfg = <5 0x3 0x0 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_guom3 {               /* A<->C */
+				ch_name = "GUOM3";
+				cfg = <6 0x3 0x0 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_guom4 {               /* A<->C */
+				ch_name = "GUOM4";
+				cfg = <7 0x3 0x20000 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_guom5 {               /* A<->C */
+				ch_name = "GUOM5";
+				cfg = <8 0x3 0x0 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_cshell {              /* A<->C */
+				ch_name = "CSHELL";
+				cfg = <9 0x3 0x2000 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_panrpc {              /* A<->C */
+				ch_name = "PANRPC";
+				cfg = <10 0x3 0x1000 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_acmax {               /* no physical channel */
+				ch_name = "ACMAX";
+				unused = <1>;
+				cfg = <11 0x3 0x0 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_cm {                  /* fifo-address init only */
+				ch_name = "CM";
+				skip = <1>;
+				cfg = <12 0x3 0x200 29 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_amcore {              /* A<->M */
+				ch_name = "A-M";
+				cfg = <13 0x3 0x200 29 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_chifi_vos {           /* C<->HIFI, skip on AP */
+				ch_name = "C-HIFI-VOS";
+				skip = <1>;
+				cfg = <14 0x3 0x1800 1 31 20 1>;
+				status = "ok";
+			};
+			icc_channel_chifi_tphy {          /* C<->HIFI, skip on AP */
+				ch_name = "C-HIFI-TPHY";
+				skip = <1>;
+				cfg = <15 0x3 0x1800 2 31 20 1>;
+				status = "ok";
+			};
+			icc_channel_vt_voip {             /* A<->C */
+				ch_name = "VT_VOIP";
+				cfg = <16 0x3 0x1000 31 6 20 0>;
+				status = "ok";
+			};
+			icc_channel_ipc_extend {          /* extended IPC */
+				ch_name = "IPC_EXTEND";
+				cfg = <20 0x4 0x200 30 20 20 1>;
+				status = "ok";
+			};
+			icc_channel_dynamic {             /* dynamic channel */
+				ch_name = "DYNAMIC";
+				cfg = <21 0x3 0x200 31 6 20 1>;
+				status = "ok";
+			};
+			icc_channel_iqi {
+				ch_name = "IQI";
+				cfg = <22 0x3 0x1000 31 6 20 1>;
+				status = "ok";
+			};
+		};
+	};
+
+	/*
+	 * SOCP (Service-Oriented Channel Protocol) shared-memory ring plus the
+	 * log buffer carved from mdmlog_memory.
+	 */
+	socp_app: socp1@ff060000 {
+		compatible = "hisilicon,socp_balong_app";
+		reg = <0x0 0xff060000 0x0 0x1000>;
+		interrupts = <0 219 4>;
+		dst_chan_cfg = <0 0xA00000 0 0>;
+		status = "ok";
+	};
+
+	socp_mem: socp-mem {
+		compatible = "hisilicon,socp_balong_memalloc";
+		memory-region = <&mdmlog_memory>;
+	};
+
+	/*
+	 * Balong timer subsystem (drv/balong_timer).
+	 *
+	 * timer_device is the high-resolution timer container; its children are
+	 * indexed by request_id and each carries base/irq/clk.  The slice timer
+	 * (bsp_get_slice_value) is a free-running counter the ported drivers use
+	 * for event timestamps; hrt_slice is its high-resolution companion.  The
+	 * core only reads base/irq/clk for wake timers, so the non-wake children
+	 * are left disabled in the container (the vendor ships them disabled too).
+	 */
+	timer_device {
+		compatible = "hisilicon,timer_device";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		timer0_app@fff14000 {
+			reg = <0x0 0xfff14000 0x0 0x1000>;
+			interrupts = <0 48 4>;
+			clock-frequency = <0x7ffc>;
+			sr_flag = <0>;
+			timer_name = "ap timer0";
+			periphid = <0xa000>;
+			wakesrc = <0>;
+			request_id = <0>;
+			status = "okay";
+		};
+	};
+
+	timerslice@fff0a000 {
+		compatible = "hisilicon,timer_slice";
+		reg = <0x0 0xfff0a534 0x0 0x1000>;
+		offset = <0x0 0x4>;
+		increase_count_flag = <1>;
+		clock-frequency = <0x7ffc>;
+		need_map = <1>;
+		status = "okay";
+	};
+
+	timer_stamp@fff0a000 {
+		compatible = "hisilicon,timer_stamp";
+		reg = <0x0 0xfff0a534 0x0 0x1000>;
+		offset = <0x0 0x4>;
+		increase_count_flag = <1>;
+		clock-frequency = <0x7ffc>;
+		need_map = <1>;
+		status = "okay";
+	};
+
+	hrttimer_app@fff08000 {
+		compatible = "hisilicon,hrttimer_slice";
+		reg = <0x0 0xfff08000 0x0 0x2000>;
+		offset = <0x1008 0x100c>;
+		clock-frequency = <0x1d4c00>;
+		increase_count_flag = <1>;
+		sr_flag = <0>;
+		need_map = <1>;
+		status = "okay";
+	};
+
+	softtimer_type_support {
+		compatible = "hisilicon,softtimer_support_type";
+		support_wake = <1>;
+		support_unwake = <1>;
+		wake-frequency = <0x7ffc>;
+		unwake-frequency = <0x7ffc>;
+		status = "okay";
+	};
+
+	/*
+	 * CCPU FIQ trigger (drv/fiq).  The sysctrl block holds the per-CPU
+	 * enable/clear/status registers; bsp_send_cp_fiq() raises an FIQ on the
+	 * modem CCPU by writing them, then rings the barrier in shared DDR.
+	 */
+	sysctrl_fiq {
+		compatible = "hisilicon,fiq";
+		chip_type = <0>;
+		reg = <0x0 0xfff35000 0x0 0x1000>;
+
+		cpu0_fiq {
+			index = <0>;
+			fiq_enable_offset = <0x12c>;
+			fiq_enable_bit = <0x0c>;
+			fiq_clear_offset = <0x12c>;
+			fiq_clear_bit = <0x0c>;
+			fiq_status_offset = <0x12c>;
+			fiq_status_bit = <0x0c>;
+		};
+
+		cpu1_fiq {
+			index = <1>;
+			fiq_enable_offset = <0x12c>;
+			fiq_enable_bit = <0x0d>;
+			fiq_clear_offset = <0x12c>;
+			fiq_clear_bit = <0x0d>;
+			fiq_status_offset = <0x12c>;
+			fiq_status_bit = <0x0d>;
+		};
+	};
+
+	/*
+	 * PMIC rails used by the modem.  A fatal OCP on one of these rails is
+	 * forwarded to the modem over ICC before the AP applies its generic
+	 * PMIC OCP policy.
+	 */
+	pmic_ocp_modem {
+		compatible = "hisilicon,pmic_ocp_modem";
+		status = "okay";
+
+		ldo1 {
+			id = <1>;
+			status = "okay";
+		};
+
+		ldo3 {
+			id = <2>;
+			status = "okay";
+		};
+
+		ldo14 {
+			id = <5>;
+			status = "okay";
+		};
+
+		ldo22 {
+			id = <6>;
+			status = "okay";
+		};
+
+		ldo28 {
+			id = <7>;
+			status = "okay";
+		};
+	};
+};

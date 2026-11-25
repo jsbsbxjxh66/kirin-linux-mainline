@@ -1,0 +1,149 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/thermal/hisilicon,hi3670-shell-thermal.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Kirin970 shell and ambient thermal zones
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description: |
+  The Kirin970 (Hi3670) exposes several board temperature sensors through the
+  HKADC and the battery fuel gauge.  This binding describes the aggregation
+  nodes that combine those sensors into a shell (device surface) or ambient
+  temperature zone.
+
+  A shell zone computes a weighted moving average of its sensors.  An ambient
+  zone reports the minimum sensor temperature minus a bias.  Sensor voltages
+  are converted to temperature with the NTC tables built into the driver.
+
+properties:
+  compatible:
+    enum:
+      - hisilicon,hi3670-shell-temp
+      - hisilicon,hi3670-ambient-temp
+
+  interval:
+    description:
+      Polling interval.  Shell zones use milliseconds, ambient zones use
+      seconds.
+    $ref: /schemas/types.yaml#/definitions/uint32
+
+  bias:
+    description:
+      Temperature offset.  Shell zones use millidegrees Celsius, ambient
+      zones use degrees Celsius.
+    $ref: /schemas/types.yaml#/definitions/uint32
+
+  count:
+    description: Number of samples in the moving average.
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 1
+
+  shell-temp-step:
+    description: Maximum temperature change per interval, in millidegrees Celsius.
+    $ref: /schemas/types.yaml#/definitions/uint32
+
+  shell-temp-step-range:
+    description: Temperature delta above which the step limit is applied.
+    $ref: /schemas/types.yaml#/definitions/uint32
+
+  io-channels:
+    description: HKADC channels used by the zone.  The battery sensor is read
+      through the power supply interface instead.
+    minItems: 1
+    maxItems: 4
+
+  io-channel-names:
+    oneOf:
+      - items:
+          - const: system_h
+      - items:
+          - const: system_h
+          - const: charger
+      - items:
+          - const: system_h
+          - const: charger
+          - const: pa_0
+      - items:
+          - const: system_h
+          - const: charger
+          - const: pa_0
+          - const: dcxo0
+
+  sensors:
+    type: object
+    additionalProperties: false
+    patternProperties:
+      "^sensor[0-9]+$":
+        type: object
+        additionalProperties: false
+        properties:
+          type:
+            description: Sensor name or power supply property source.
+            enum:
+              - system_h
+              - charger
+              - pa_0
+              - dcxo0
+              - Battery
+          coef:
+            description: Per-sample weights for a shell zone.
+            $ref: /schemas/types.yaml#/definitions/uint32-array
+        required:
+          - type
+
+required:
+  - compatible
+  - interval
+  - sensors
+
+additionalProperties: false
+
+examples:
+  - |
+    hkadc: adc {
+        #io-channel-cells = <1>;
+    };
+
+    shell-frame {
+        compatible = "hisilicon,hi3670-shell-temp";
+        interval = <5000>;
+        bias = <500>;
+        count = <6>;
+        shell-temp-step = <200>;
+        shell-temp-step-range = <400>;
+        io-channels = <&hkadc 7>, <&hkadc 5>, <&hkadc 4>, <&hkadc 15>;
+        io-channel-names = "system_h", "charger", "pa_0", "dcxo0";
+
+        sensors {
+            sensor0 {
+                type = "system_h";
+                coef = <(-9643) (-4992) (-2884) (-2948) (-1338) (-470)>;
+            };
+            sensor1 {
+                type = "Battery";
+                coef = <20343 3543 9720 5217 3527 12166>;
+            };
+        };
+    };
+
+    ambient {
+        compatible = "hisilicon,hi3670-ambient-temp";
+        interval = <900>;
+        bias = <1>;
+        io-channels = <&hkadc 7>, <&hkadc 5>, <&hkadc 4>, <&hkadc 15>;
+        io-channel-names = "system_h", "charger", "pa_0", "dcxo0";
+
+        sensors {
+            sensor0 {
+                type = "system_h";
+            };
+            sensor1 {
+                type = "Battery";
+            };
+        };
+    };
+...

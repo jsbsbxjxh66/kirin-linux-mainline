@@ -1,0 +1,113 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/sound/hisilicon,codec-controller.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi64xx audio codec controller
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The Hi64xx codec controller owns the register access path, master clock and
+  supplies for the Hi6403 codec. It also creates the nested Hi64xx interrupt
+  controller and the codec device below it.
+
+properties:
+  compatible:
+    const: hisilicon,codec-controller
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  interrupts-extended:
+    maxItems: 1
+
+  pinctrl-names:
+    items:
+      - const: default
+      - const: idle
+
+  pinctrl-0: true
+
+  pinctrl-1: true
+
+  clocks:
+    maxItems: 1
+
+  clock-names:
+    const: clk_pmuaudioclk
+
+  hisilicon,codec-sel:
+    $ref: /schemas/types.yaml#/definitions/string
+    description: Codec selection string.
+
+  hisilicon,bus-sel:
+    enum: [ssi, slimbus]
+    description: Register access bus selection.
+
+  hisilicon,reg-8bit-begin-addr:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Start address of the 8-bit register window.
+
+  hisilicon,reg-8bit-end-addr:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: End address of the 8-bit register window.
+
+  pmu_clkcodec_addr:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: PMIC codec clock control register address.
+
+  pmu_clkcodec_addr_bit:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: PMIC codec clock control register bit.
+
+  slimbusclk_io_driver:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: SLIMbus clock pin drive strength.
+
+  slimbusdata_io_driver:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: SLIMbus data pin drive strength.
+
+  pm_runtime_support:
+    type: boolean
+    description: Enable runtime PM for the codec controller.
+
+  reg_read_twice:
+    type: boolean
+    description: Read each register twice on the SSI bus.
+
+  codec_ldo8_set_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Set the LDO8 supply to its fixed voltage at probe time.
+
+  hisilicon,ldo8_supply:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Use the codec LDO8 supply.
+
+  codec-main-supply:
+    description: Main codec supply.
+
+  codec-anlg-supply:
+    description: Analogue codec supply.
+
+  codec_ldo8-supply:
+    description: Codec LDO8 supply.
+
+  "hi64xx-irq":
+    $ref: hisilicon,hi64xx-irq.yaml#
+
+required:
+  - compatible
+  - reg
+  - clocks
+  - clock-names
+  - hisilicon,reg-8bit-begin-addr
+  - hisilicon,reg-8bit-end-addr
+
+additionalProperties: false

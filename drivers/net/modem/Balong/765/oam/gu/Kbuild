@@ -1,0 +1,155 @@
+OAMDIR = ..
+
+MODEM_DIR := $(srctree)/$(src)/../..
+-include $(MODEM_DIR)/config/product/$(OBB_PRODUCT_NAME)/config/balong_product_config.mk
+
+ifeq ($(TARGET_ARM_TYPE), arm64)
+# Mainline dropped EXTRA_CFLAGS support (scripts/Makefile.lib no longer
+# does 'ccflags-y += $(EXTRA_CFLAGS)'); the whole include list would
+# vanish silently.  ccflags-y is the modern equivalent.
+ccflags-y += -Iarch/arm64/include/asm
+else
+ccflags-y += -Iarch/arm/include/asm
+endif
+ccflags-y += -Iinclude/linux
+ccflags-y += -Iinclude/generated
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/config/osa/
+ccflags-y += -I$(MODEM_DIR)/config/errlog/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/config/product/$(OBB_PRODUCT_NAME)/config/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/drv/acore/
+ccflags-y += -I$(MODEM_DIR)/include/drv/common/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/comm/om/
+ccflags-y += -I$(MODEM_DIR)/include/oam/gu/comm/osa/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/gu/comm/si/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/gu/comm/usimm/
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/comm/nvim/
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/gu/comm/om/
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/oam/lt/acore/
+ccflags-y += -I$(MODEM_DIR)/include/oam/lt/common/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/ps/gups/acore/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/ps/gups/common/
+ccflags-y += -I$(MODEM_DIR)/include/ps/tlps/acore/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/ps/tlps/common/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/taf/acore/
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/include/taf/common/
+ccflags-y += 
+
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/pam/
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/msp/
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/guc_nas/
+ccflags-y += -I$(MODEM_DIR)/include/nv/common/guc_as/
+ccflags-y += -I$(MODEM_DIR)/include/nv/acore/guc_nas/
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/comm/si/
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/comm/cbtfun/
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/acore/om/
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/acore/cbtcpm/
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/acore/cbtppm/
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/acore/cbtfun/
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/acore/cbtscm/
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/comm/om/
+
+
+#lt only INC
+
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/comm/si/
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/oam/inc/lt/comm/list/
+ccflags-y += -I$(MODEM_DIR)/oam/inc/lt/acore/diag/
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += 
+ccflags-y += -I$(MODEM_DIR)/oam/inc/gu/acore/om/
+ccflags-y += -I$(MODEM_DIR)/taf/comm/src/acore/at/inc/
+ccflags-y += 
+
+
+ccflags-y +=  -DVOS_LINUX=4 -DOSA_CPU_ACPU=1 -DVOS_OS_VER=VOS_LINUX -DVOS_OSA_CPU=OSA_CPU_ACPU -D__LOG_RELEASE__ -DBSP_CORE_APP -DGU_MODE -DMSP_SUPPORT_USB_VCOM1 -DMSP_SUPPORT_USB_VCOM2 -DVOS_DOPRA_VER=2 -DNDIS_RELEASE -DBALONG_PHY_V200=2 -DBALONG_PHY_V300=3 -DBALONG_PHY_VER=BALONG_PHY_V300 -DBALONG_CHIP_V200=2 -DBALONG_CHIP_V300=3 -DBALONG_CHIP_V500=4 -DBALONG_CHIP_VER=BALONG_CHIP_V500 -DMSP_GUNAS_AT_UNITE
+
+ifneq ($(TARGET_ARM_TYPE), arm64)
+ccflags-y += -D__LINUX_ARM_ARCH__=7 -march=armv7-a -Uarm
+endif
+
+
+ccflags-y += -DPRODUCT_CFG_MULTIMODE_LTE -DHAL_DIAG_SDM_USE
+
+
+ccflags-y += -fsigned-char
+gumsp-objs += $(OAMDIR)/../config/errlog/errlog_cfg.o
+gumsp-objs += $(OAMDIR)/gu/acore/om/ompcvoice.o
+gumsp-objs += $(OAMDIR)/gu/acore/om/pamappom.o
+gumsp-objs += $(OAMDIR)/gu/acore/usimm/usimmappbase.o
+gumsp-objs += $(OAMDIR)/gu/acore/cbtcpm/CbtCpm.o
+gumsp-objs += $(OAMDIR)/gu/acore/cbtppm/CbtPpm.o
+gumsp-objs += $(OAMDIR)/gu/acore/cbtscm/CBTSCMSoftDecode.o
+gumsp-objs += $(OAMDIR)/gu/acore/cbtscm/OmHdlc.o
+gumsp-objs += $(OAMDIR)/gu/acore/cbtfun/cbtappfunction.o
+gumsp-objs += $(OAMDIR)/gu/acore/cbtfun/cbtapprl.o
+gumsp-objs += $(OAMDIR)/gu/acore/osa/linux_sem.o
+gumsp-objs += $(OAMDIR)/gu/acore/osa/linux_task.o
+gumsp-objs += $(OAMDIR)/gu/acore/si/PcscProc.o
+gumsp-objs += $(OAMDIR)/gu/comm/om/omringbuffer.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/v_blkmem.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/v_private.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/v_int.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/rtc_timer.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/v_queue.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/v_timer.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/v_msg.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/v_lib.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/vos_Id.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/vos_main.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/v_nsprintf.o
+gumsp-objs += $(OAMDIR)/gu/comm/osa/v_sprintf.o
+gumsp-objs += $(OAMDIR)/gu/comm/si/pbapi.o
+gumsp-objs += $(OAMDIR)/gu/comm/si/pbmsg.o
+gumsp-objs += $(OAMDIR)/gu/comm/si/pbdata.o
+gumsp-objs += $(OAMDIR)/gu/comm/si/stkapi.o
+gumsp-objs += $(OAMDIR)/gu/comm/si/pihapi.o
+gumsp-objs += $(OAMDIR)/gu/comm/si/pbapi_phone.o
+
+
+obj-y  := gumsp.o
+
+
+

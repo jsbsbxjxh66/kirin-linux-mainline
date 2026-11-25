@@ -1,0 +1,22 @@
+# Hisilicon mntn (maintenance / exception record) support.
+config HISILICON_PLATFORM_MAINTAIN
+	bool "Hisilicon platform maintain module support"
+	default n
+	help
+	  Say yes here to support the hisilicon platform maintain module.
+
+config HISI_KERNELDUMP
+	bool "Hisilicon kernel dump metadata"
+	depends on HISI_MNTNDUMP
+	default n
+	help
+	  Publish kernel image, memmap and memblock metadata into the
+	  maintenance dump region for offline crash analysis.
+
+config HISI_MNTNDUMP
+	bool "Hisilicon platform mntn dump driver"
+	default n
+	help
+	  Reserve and describe the maintenance dump region used by RDR.
+
+source "drivers/soc/hisilicon/rdr/blackbox/Kconfig"

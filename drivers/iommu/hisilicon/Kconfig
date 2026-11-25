@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config HISI_SMMU_LPAE
+	bool "Hisilicon LPAE SMMU page-table manager"
+	depends on ARM64 && (ARCH_HISI || COMPILE_TEST)
+	select IOMMU_API
+	help
+	  Support for the shared LPAE SMMU page tables used by the media
+	  subsystems (ISP, IVP, JPEG) on Hisilicon Kirin SoCs.
+
+	  The secure firmware and the consumer drivers program the SMMU
+	  hardware; this driver only manages the three-level page tables.
+
+	  Say Y here if you want to use the SMMU on a Kirin 970 device.
+
+	  If unsure, say N.

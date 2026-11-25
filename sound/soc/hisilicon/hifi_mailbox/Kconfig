@@ -1,0 +1,2 @@
+source "sound/soc/hisilicon/hifi_mailbox/mailbox/Kconfig"
+source "sound/soc/hisilicon/hifi_mailbox/ipcm/Kconfig"

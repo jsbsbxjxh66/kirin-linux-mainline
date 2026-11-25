@@ -1,0 +1,1897 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * dts file for Hisilicon Hi3670 SoC
+ *
+ * Copyright (C) 2016, HiSilicon Ltd.
+ * Copyright (C) 2018, Linaro Ltd.
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/hi3670-clock.h>
+#include <dt-bindings/thermal/thermal.h>
+
+/ {
+	compatible = "hisilicon,hi3670";
+	interrupt-parent = <&gic>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	hhee {
+		compatible = "hisilicon,hisi-hhee";
+		interrupts = <GIC_SPI 350 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+	};
+
+	cpus {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		cpu-map {
+			cluster0 {
+				core0 {
+					cpu = <&cpu0>;
+				};
+				core1 {
+					cpu = <&cpu1>;
+				};
+				core2 {
+					cpu = <&cpu2>;
+				};
+				core3 {
+					cpu = <&cpu3>;
+				};
+			};
+			cluster1 {
+				core0 {
+					cpu = <&cpu4>;
+				};
+				core1 {
+					cpu = <&cpu5>;
+				};
+				core2 {
+					cpu = <&cpu6>;
+				};
+				core3 {
+					cpu = <&cpu7>;
+				};
+			};
+		};
+
+		idle-states {
+			entry-method = "psci";
+
+			CPU_SLEEP_0: cpu-sleep-0 {
+				compatible = "arm,idle-state";
+				local-timer-stop;
+				arm,psci-suspend-param = <0x0010000>;
+				entry-latency-us = <40>;
+				exit-latency-us = <70>;
+				min-residency-us = <3000>;
+			};
+
+			CLUSTER_SLEEP_0: cluster-sleep-0 {
+				compatible = "arm,idle-state";
+				local-timer-stop;
+				arm,psci-suspend-param = <0x1010000>;
+				entry-latency-us = <500>;
+				exit-latency-us = <5000>;
+				min-residency-us = <20000>;
+			};
+
+			CLUSTER_SLEEP_1: cluster-sleep-1 {
+				compatible = "arm,idle-state";
+				local-timer-stop;
+				arm,psci-suspend-param = <0x1010000>;
+				entry-latency-us = <1000>;
+				exit-latency-us = <5000>;
+				min-residency-us = <20000>;
+			};
+		};
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x0 0x0>;
+			enable-method = "psci";
+			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER0>;
+			operating-points-v2 = <&cluster0_opp>;
+			#cooling-cells = <2>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
+		};
+
+		cpu1: cpu@1 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x0 0x1>;
+			enable-method = "psci";
+			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER0>;
+			operating-points-v2 = <&cluster0_opp>;
+			#cooling-cells = <2>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
+		};
+
+		cpu2: cpu@2 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x0 0x2>;
+			enable-method = "psci";
+			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER0>;
+			operating-points-v2 = <&cluster0_opp>;
+			#cooling-cells = <2>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
+		};
+
+		cpu3: cpu@3 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x0 0x3>;
+			enable-method = "psci";
+			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER0>;
+			operating-points-v2 = <&cluster0_opp>;
+			#cooling-cells = <2>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
+		};
+
+		cpu4: cpu@100 {
+			compatible = "arm,cortex-a73";
+			device_type = "cpu";
+			reg = <0x0 0x100>;
+			enable-method = "psci";
+			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER1>;
+			operating-points-v2 = <&cluster1_opp>;
+			#cooling-cells = <2>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
+		};
+
+		cpu5: cpu@101 {
+			compatible = "arm,cortex-a73";
+			device_type = "cpu";
+			reg = <0x0 0x101>;
+			enable-method = "psci";
+			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER1>;
+			operating-points-v2 = <&cluster1_opp>;
+			#cooling-cells = <2>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
+		};
+
+		cpu6: cpu@102 {
+			compatible = "arm,cortex-a73";
+			device_type = "cpu";
+			reg = <0x0 0x102>;
+			enable-method = "psci";
+			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER1>;
+			operating-points-v2 = <&cluster1_opp>;
+			#cooling-cells = <2>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
+		};
+
+		cpu7: cpu@103 {
+			compatible = "arm,cortex-a73";
+			device_type = "cpu";
+			reg = <0x0 0x103>;
+			enable-method = "psci";
+			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER1>;
+			operating-points-v2 = <&cluster1_opp>;
+			#cooling-cells = <2>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
+		};
+	};
+
+	cluster0_opp: opp-table-0 {
+		compatible = "operating-points-v2";
+		opp-shared;
+
+		opp-509000000 {
+			opp-hz = /bits/ 64 <509000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1018000000 {
+			opp-hz = /bits/ 64 <1018000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1210000000 {
+			opp-hz = /bits/ 64 <1210000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1402000000 {
+			opp-hz = /bits/ 64 <1402000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1556000000 {
+			opp-hz = /bits/ 64 <1556000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1690000000 {
+			opp-hz = /bits/ 64 <1690000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1844000000 {
+			opp-hz = /bits/ 64 <1844000000>;
+			clock-latency-ns = <2000000>;
+		};
+	};
+
+	cluster1_opp: opp-table-1 {
+		compatible = "operating-points-v2";
+		opp-shared;
+
+		opp-682000000 {
+			opp-hz = /bits/ 64 <682000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1018000000 {
+			opp-hz = /bits/ 64 <1018000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1210000000 {
+			opp-hz = /bits/ 64 <1210000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1364000000 {
+			opp-hz = /bits/ 64 <1364000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1498000000 {
+			opp-hz = /bits/ 64 <1498000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1652000000 {
+			opp-hz = /bits/ 64 <1652000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-1863000000 {
+			opp-hz = /bits/ 64 <1863000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-2093000000 {
+			opp-hz = /bits/ 64 <2093000000>;
+			clock-latency-ns = <2000000>;
+		};
+		opp-2362000000 {
+			opp-hz = /bits/ 64 <2362000000>;
+			clock-latency-ns = <2000000>;
+		};
+	};
+
+	gpu_opp: opp-table-2 {
+		compatible = "operating-points-v2";
+		opp-shared;
+
+		/*
+		 * The g3d rail is a fixed 950 mV rail whose enable/disable is
+		 * delegated to LPM3; the regulator has no set_voltage op.  Keep
+		 * every OPP at that voltage so the OPP core's regulator request
+		 * is a no-op and only the clock is scaled, matching the vendor
+		 * Mali kbase behaviour.
+		 */
+		opp-103750000 {
+			opp-hz = /bits/ 64 <103750000>;
+			opp-microvolt = <950000>;
+		};
+		opp-150909000 {
+			opp-hz = /bits/ 64 <150909000>;
+			opp-microvolt = <950000>;
+		};
+		opp-237143000 {
+			opp-hz = /bits/ 64 <237143000>;
+			opp-microvolt = <950000>;
+		};
+		opp-332000000 {
+			opp-hz = /bits/ 64 <332000000>;
+			opp-microvolt = <950000>;
+		};
+		opp-415000000 {
+			opp-hz = /bits/ 64 <415000000>;
+			opp-microvolt = <950000>;
+		};
+		opp-550000000 {
+			opp-hz = /bits/ 64 <550000000>;
+			opp-microvolt = <950000>;
+		};
+		opp-667000000 {
+			opp-hz = /bits/ 64 <667000000>;
+			opp-microvolt = <950000>;
+		};
+		opp-767000000 {
+			opp-hz = /bits/ 64 <767000000>;
+			opp-microvolt = <950000>;
+		};
+	};
+
+	ddr_opp: opp-table-3 {
+		compatible = "operating-points-v2";
+		opp-shared;
+
+		opp-415000000 {
+			opp-hz = /bits/ 64 <415000000>;
+		};
+		opp-830000000 {
+			opp-hz = /bits/ 64 <830000000>;
+		};
+		opp-1244000000 {
+			opp-hz = /bits/ 64 <1244000000>;
+		};
+		opp-1866000000 {
+			opp-hz = /bits/ 64 <1866000000>;
+		};
+	};
+
+	gic: interrupt-controller@e82b0000 {
+		compatible = "arm,gic-400";
+		reg = <0x0 0xe82b1000 0 0x1000>, /* GICD */
+		      <0x0 0xe82b2000 0 0x2000>, /* GICC */
+		      <0x0 0xe82b4000 0 0x2000>, /* GICH */
+		      <0x0 0xe82b6000 0 0x2000>; /* GICV */
+		#interrupt-cells = <3>;
+		#address-cells = <0>;
+		interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(8) |
+					 IRQ_TYPE_LEVEL_HIGH)>;
+		interrupt-controller;
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(8) |
+					  IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(8) |
+					  IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(8) |
+					  IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(8) |
+					  IRQ_TYPE_LEVEL_LOW)>;
+		clock-frequency = <1920000>;
+		arm,no-tick-in-suspend;
+	};
+
+	pmu {
+		compatible = "arm,armv8-pmuv3";
+		interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 2 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 4 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-affinity = <&cpu0>, <&cpu1>, <&cpu2>, <&cpu3>,
+				     <&cpu4>, <&cpu5>, <&cpu6>, <&cpu7>;
+	};
+
+	/*
+	 * Shared LPAE SMMU page tables for the media subsystems.  The SMMU
+	 * hardware itself is configured by firmware and the consumer drivers.
+	 */
+	smmu_lpae: iommu {
+		compatible = "hisi,hisi-smmu-lpae";
+		#iommu-cells = <0>;
+	};
+
+	cci: cci@e8100000 {
+		compatible = "arm,cci-550";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		reg = <0x0 0xe8100000 0x0 0x1000>;
+		ranges = <0x0 0x0 0x0 0xe8100000 0x0 0x100000>;
+
+		pmu@10000 {
+			compatible = "arm,cci-550-pmu,r0";
+			reg = <0x0 0x10000 0x0 0x80000>;
+			interrupts = <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 177 IRQ_TYPE_LEVEL_HIGH>;
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		crg_ctrl: crg_ctrl@fff35000 {
+			compatible = "hisilicon,hi3670-crgctrl", "syscon";
+			reg = <0x0 0xfff35000 0x0 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		crg_rst: crg_rst_controller {
+			compatible = "hisilicon,hi3670-reset",
+				     "hisilicon,hi3660-reset";
+			#reset-cells = <2>;
+			hisi,rst-syscon = <&crg_ctrl>;
+		};
+
+		pctrl: pctrl@e8a09000 {
+			compatible = "hisilicon,hi3670-pctrl", "syscon";
+			reg = <0x0 0xe8a09000 0x0 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		hwspinlock {
+			compatible = "hisilicon,hwspinlock";
+			hisilicon,syscon = <&pctrl>;
+			hwlock,register-width = <32>;
+			hwlock,bits-per-single = <4>;
+			hwlock,groups = <8>;
+			hwlock,offset = <0x400 0x40c 0x418 0x424
+					 0x800 0x80c 0x818 0x824>;
+		};
+
+		mailbox: mailbox@e896b000 {
+			compatible = "hisilicon,hi3670-mbox";
+			reg = <0x0 0xe896b000 0x0 0x1000>;
+			#mbox-cells = <1>;
+			hisilicon,unlock-key = <0x1acce551>;
+
+			mailbox-13 {
+				hisilicon,index = <13>;
+				hisilicon,src-bit = <0>;
+				hisilicon,dst-bit = <3>;
+				hisilicon,automatic-ack;
+			};
+
+			mailbox-14 {
+				hisilicon,index = <14>;
+				hisilicon,src-bit = <1>;
+				hisilicon,dst-bit = <3>;
+				hisilicon,sync;
+			};
+
+			mailbox-16 {
+				hisilicon,index = <16>;
+				hisilicon,src-bit = <0>;
+				hisilicon,dst-bit = <3>;
+				hisilicon,automatic-ack;
+			};
+
+			mailbox-0 {
+				hisilicon,index = <0>;
+				hisilicon,src-bit = <3>;
+				hisilicon,dst-bit = <0>;
+				interrupts = <GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			mailbox-5 {
+				hisilicon,index = <5>;
+				hisilicon,src-bit = <7>;
+				hisilicon,dst-bit = <1>;
+				interrupts = <GIC_SPI 202 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			mailbox-8 {
+				hisilicon,index = <8>;
+				hisilicon,src-bit = <8>;
+				hisilicon,dst-bit = <1>;
+				interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			mailbox-23 {
+				hisilicon,index = <23>;
+				hisilicon,src-bit = <0>;
+				hisilicon,dst-bit = <8>;
+				hisilicon,automatic-ack;
+			};
+
+			mailbox-25 {
+				hisilicon,index = <25>;
+				hisilicon,src-bit = <0>;
+				hisilicon,dst-bit = <7>;
+			};
+		};
+
+		hkadc: adc {
+			compatible = "hisilicon,hi3670-hkadc";
+			mboxes = <&mailbox 16>, <&mailbox 0>;
+			mbox-names = "tx", "rx";
+			#io-channel-cells = <1>;
+			status = "okay";
+		};
+
+		pmuctrl: crg_ctrl@fff34000 {
+			compatible = "hisilicon,hi3670-pmuctrl", "syscon";
+			reg = <0x0 0xfff34000 0x0 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		sctrl: sctrl@fff0a000 {
+			compatible = "hisilicon,hi3670-sctrl", "syscon";
+			reg = <0x0 0xfff0a000 0x0 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		pmctrl: syscon@fff31000 {
+			compatible = "hisilicon,hi3670-pmctrl", "syscon";
+			reg = <0x0 0xfff31000 0x0 0x1000>;
+		};
+
+		stub_clock: stub-clock {
+			compatible = "hisilicon,hi3670-stub-clk";
+			#clock-cells = <1>;
+			hisilicon,syscon = <&sctrl>;
+			hisilicon,scbak-offset = <0x41c>;
+			hisilicon,cluster0-opp = <&cluster0_opp>;
+			hisilicon,cluster1-opp = <&cluster1_opp>;
+			hisilicon,gpu-opp = <&gpu_opp>;
+			hisilicon,ddr-opp = <&ddr_opp>;
+			hisilicon,pmctrl = <&pmctrl>;
+			mboxes = <&mailbox 13>;
+		};
+
+		iomcu: iomcu@ffd7e000 {
+			compatible = "hisilicon,hi3670-iomcu", "syscon";
+			reg = <0x0 0xffd7e000 0x0 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		media1_crg: media1_crgctrl@e87ff000 {
+			compatible = "hisilicon,hi3670-media1-crg", "syscon";
+			reg = <0x0 0xe87ff000 0x0 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		media2_crg: media2_crgctrl@e8900000 {
+			compatible = "hisilicon,hi3670-media2-crg","syscon";
+			reg = <0x0 0xe8900000 0x0 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		regulator_ip: regulator-ip {
+			compatible = "hisilicon,hisi_regulator_ip_atf_core",
+				     "simple-bus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			media_subsys: regulator@0 {
+				compatible = "ip-regulator-atf";
+				reg = <0>;
+				regulator-name = "media_subsys";
+				hisilicon,hisi-regulator-id = <0>;
+			};
+
+			vivobus: regulator@1 {
+				compatible = "ip-regulator-atf";
+				reg = <1>;
+				regulator-name = "vivobus";
+				hisilicon,hisi-regulator-id = <1>;
+				vin-supply = <&media_subsys>;
+			};
+
+			vcodecsubsys: regulator@2 {
+				compatible = "ip-regulator-atf";
+				reg = <2>;
+				regulator-name = "vcodecsubsys";
+				hisilicon,hisi-regulator-id = <2>;
+				vin-supply = <&media2_subsys>;
+			};
+
+			ispsubsys: regulator@5 {
+				compatible = "ip-regulator-atf";
+				reg = <5>;
+				regulator-name = "ispsubsys";
+				hisilicon,hisi-regulator-id = <5>;
+				vin-supply = <&vivobus>;
+			};
+
+			isp_srt: regulator@8 {
+				compatible = "ip-regulator-atf";
+				reg = <8>;
+				regulator-name = "isp_srt";
+				hisilicon,hisi-regulator-id = <8>;
+				vin-supply = <&ispsubsys>;
+			};
+
+			ivp: regulator@3 {
+				compatible = "ip-regulator-atf";
+				reg = <3>;
+				regulator-name = "ivp";
+				hisilicon,hisi-regulator-id = <3>;
+				vin-supply = <&vivobus>;
+			};
+
+			vdec: regulator@6 {
+				compatible = "ip-regulator-atf";
+				reg = <6>;
+				regulator-name = "vdec";
+				hisilicon,hisi-regulator-id = <6>;
+				vin-supply = <&vcodecsubsys>;
+			};
+
+			venc: regulator@7 {
+				compatible = "ip-regulator-atf";
+				reg = <7>;
+				regulator-name = "venc";
+				hisilicon,hisi-regulator-id = <7>;
+				vin-supply = <&vcodecsubsys>;
+			};
+
+			media2_subsys: regulator@12 {
+				compatible = "ip-regulator-atf";
+				reg = <12>;
+				regulator-name = "media2_subsys";
+				hisilicon,hisi-regulator-id = <12>;
+			};
+		};
+
+		venc_hw: venc@e8880000 {
+			compatible = "hisi,kirin970-venc";
+			reg = <0x0 0xe8880000 0x0 0x40000>;
+			interrupts = <GIC_SPI 296 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 297 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 298 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "venc_norm", "venc_prot", "venc_safe";
+			clocks = <&media2_crg HI3670_CLK_GATE_VENCFREQ>,
+				 <&crg_ctrl HI3670_VENC_VOLT_HOLD>;
+			clock-names = "clk_venc", "venc_volt_hold";
+			enc_clk_rate = <0x21055e80 0x1ad27480 0xe2f9780>;
+			venc_qos_mode = <2>;
+			venc-supply = <&venc>;
+			media-supply = <&media_subsys>;
+			status = "okay";
+
+			iommu_info {
+				start-addr = <0x40000>;
+				size = <0xe0000000>;
+			};
+		};
+
+		ivp_smmu: iommu@e8dc0000 {
+			compatible = "hisi,ivp-smmu";
+			reg = <0x0 0xe8dc0000 0x0 0x20000>;
+			interrupts = <GIC_SPI 254 IRQ_TYPE_LEVEL_HIGH>;
+			iommus = <&smmu_lpae>;
+			hisi,smmu-version = <2>;
+			status = "okay";
+
+			iommu_info {
+				start-addr = <0x0>;
+				size = <0xe0000000>;
+			};
+		};
+
+		hisi_ivp: ivp@e8d80000 {
+			compatible = "hisilicon,hisi-ivp";
+			reg = <0x0 0xe8d80000 0x0 0x80000>,
+			      <0x0 0xe8a09000 0x0 0x1000>,
+			      <0x0 0xfff35000 0x0 0x1000>,
+			      <0x0 0xe82b0000 0x0 0x1000>;
+			interrupts = <GIC_SPI 255 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 275 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "ivp_irq", "ivp_dwaxi";
+			clocks = <&media1_crg HI3670_CLK_GATE_IVP>;
+			clock-names = "hisi-ivp-clk";
+			ivp-clk-rate = <0x21055e80>;
+			lowfrq-pd-clk-rate = <0xe2f9780>;
+			hisi-ivp-supply = <&ivp>;
+			hisi-ivp-media-supply = <&media_subsys>;
+			ivp-dynamic-mem = <0x600000>;
+			ivp-dynamic-mem-section-size = <0x200000>;
+			status = "okay";
+
+			ivp_mem_section {
+				dram0_mem {
+					section_mem = <0xe8c00000 0xe8c0000 0x30000>;
+				};
+
+				dram1_mem {
+					section_mem = <0xe8c80000 0xe8c8000 0x30000>;
+				};
+
+				iram_mem {
+					section_mem = <0xe8d00000 0xe8d0000 0x8000>;
+				};
+
+				ddr_mem {
+					section_mem = <0xe0000000 0x1cd0000 0xd0000>;
+				};
+
+				share_mem {
+					section_mem = <0xe00d0000 0x1cdd000 0x10000>;
+				};
+
+				log_mem {
+					section_mem = <0xe00e0000 0x1cde000 0x20000>;
+				};
+			};
+		};
+
+		hisi_ivp_ipc: ivp-ipc {
+			compatible = "hisilicon,hisi-ivp-ipc";
+			status = "okay";
+		};
+
+		cambricon_ipu: cambricon-ipu@ff400000 {
+			compatible = "hisilicon,cambricon-ipu";
+			reg = <0x0 0xff400000 0x0 0x100000>,
+			      <0x0 0xff500000 0x0 0x100000>;
+			interrupts = <GIC_SPI 293 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "ipu_dma_irq";
+			clocks = <&media2_crg HI3670_CLK_GATE_ICSFREQ>,
+				 <&crg_ctrl HI3670_CLK_GATE_VCODECBUS_GT>,
+				 <&crg_ctrl HI3670_ICS_VOLT_HIGH>,
+				 <&crg_ctrl HI3670_ICS_VOLT_MIDDLE>;
+			clock-names = "clk-ics", "clk_vcodecbus",
+				      "ics_volt_high", "ics_volt_middle";
+			iommus = <&smmu_lpae>;
+			vipu-supply = <&ivp>;
+			status = "okay";
+
+			ipu-and-vcodecbus-clock-rate {
+				start-rate = <0x35a4e900>;
+				stop-rate = <0x13c9eb00>;
+				ipu-low = <0x16e36000>;
+				ipu-middle = <0x23c34600>;
+				ipu-high = <0x35a4e900>;
+				ipu-low-temperature = <0x23c34600>;
+				vcodecbus-low = <0xb06e040>;
+				vcodecbus-middle = <0x13c9eb00>;
+				vcodecbus-high = <0x1ad27480>;
+				vcodecbus-default = <0x18bc65c0>;
+				vcodecbus-high2default = <0xd693a40>;
+			};
+
+			iommu_info {
+				start-addr = <0x40000>;
+				iova-align = <0x1000>;
+				size = <0x80000000>;
+			};
+
+			smmu_master {
+				smmu-mstr-base-addr = <0xff4a0000>;
+				smmu-mstr-glb-bypass = <0x0>;
+				smmu-mstr-end-ack = <0x1c>;
+				smmu-mstr-smrx-start = <0x28>;
+				smmu-mstr-inpt-sel = <0x34>;
+				smmu-mstr-intmask = <0x40>;
+				smmu-mstr-intstat = <0x48>;
+				smmu-mstr-intclr = <0x4c>;
+				smmu-mstr-dbg-port-in-0 = <0x70>;
+				smmu-mstr-dbg-port-out = <0x78>;
+				smmu-mstr-smrx-0-stream-0 = <0x100>;
+				smmu-mstr-smrx-0-stream-1 = <0x104>;
+				smmu-mstr-smrx-0-stream-2 = <0x108>;
+				smmu-mstr-smrx-0-stream-3 = <0x10c>;
+				read-cmd-total-cnt-stream-0 = <0x600>;
+				read-cmd-total-cnt-stream-1 = <0x604>;
+				read-cmd-total-cnt-stream-2 = <0x608>;
+				read-cmd-miss-cnt-stream-0 = <0x760>;
+				read-cmd-miss-cnt-stream-1 = <0x764>;
+				read-cmd-miss-cnt-stream-2 = <0x768>;
+				read-data-total-cnt-stream-0 = <0x8c0>;
+				read-data-total-cnt-stream-1 = <0x8c4>;
+				read-data-total-cnt-stream-2 = <0x8c8>;
+				read-cmd-case-cnt-stream-0 = <0xa20>;
+				read-cmd-case-cnt-stream-1 = <0xa24>;
+				read-cmd-case-cnt-stream-2 = <0xa28>;
+				read-cmd-case-cnt-stream-3 = <0xa2c>;
+				read-cmd-case-cnt-stream-4 = <0xa30>;
+				read-cmd-case-cnt-stream-5 = <0xa34>;
+				read-cmd-trans-latency = <0xa38>;
+				write-cmd-total-cnt = <0xb00>;
+				write-cmd-miss-cnt = <0xc60>;
+				write-data-total-cnt = <0xdc0>;
+				write-cmd-case-cnt-stream-0 = <0xf20>;
+				write-cmd-case-cnt-stream-1 = <0xf24>;
+				write-cmd-case-cnt-stream-2 = <0xf28>;
+				write-cmd-case-cnt-stream-3 = <0xf2c>;
+				write-cmd-case-cnt-stream-4 = <0xf30>;
+				write-cmd-case-cnt-stream-5 = <0xf34>;
+				write-cmd-trans-latency = <0xf38>;
+			};
+
+			smmu_common {
+				smmu-common-base-addr = <0xff480000>;
+				smmu-scr = <0x0>;
+				smmu-intmask-ns = <0x10>;
+				smmu-intstat-ns = <0x18>;
+				smmu-intclr-ns = <0x1c>;
+				smmu-cb-ttbr0 = <0x204>;
+				smmu-cb-ttbcr = <0x20c>;
+				smmu-scachei-all = <0x214>;
+				smmu-fama-ctrl1-ns = <0x224>;
+				smmu-addr-msb = <0x300>;
+				smmu-err-rdaddr = <0x304>;
+				smmu-err-wraddr = <0x308>;
+				smmu-opref-addr = <0x3a4>;
+				smmu-opref-ctrl = <0x3a8>;
+			};
+
+			ics_irq {
+				ics-irq-base-addr = <0xff4a2000>;
+				ics-irq-mask-ns = <0x0>;
+				ics-irq-status-ns = <0x8>;
+				ics-irq-clr-ns = <0xc>;
+			};
+
+			ics_noc_bus {
+				base-addr = <0xe8950000>;
+				qos-type = <0xc>;
+				factor = <0x10>;
+				saturation = <0x14>;
+				qos_extcontrol = <0x18>;
+			};
+
+			pmctrl {
+				base-addr = <0xfff31000>;
+				noc-power-idle-req = <0x380>;
+				noc-power-idle-ack = <0x384>;
+				noc-power-idle-stat = <0x388>;
+			};
+
+			pctrl {
+				base-addr = <0xe8a09000>;
+				peri-stat3 = <0xa0>;
+			};
+
+			media2 {
+				base-addr = <0xe8900000>;
+				peren0 = <0x0>;
+				perdis0 = <0x4>;
+				perclken0 = <0x8>;
+				perstat0 = <0xc>;
+				perrsten0 = <0x30>;
+				perrstdis0 = <0x34>;
+				perrststat0 = <0x38>;
+			};
+
+			peri {
+				base-addr = <0xfff35000>;
+				clkdiv8 = <0xc8>;
+				clkdiv18 = <0xf0>;
+				perpwrstat = <0x158>;
+				perpwrack = <0x15c>;
+				peristat7 = <0x50c>;
+			};
+		};
+
+		/*
+		 * Mali-G72 MP12 GPU
+		 *
+		 * Base address, size, interrupts and interrupt names are taken
+		 * from the real device (COR-AL00 / Hi3670, sys-fdt.dtb):
+		 *   mali@E82C0000, reg = <0xe82c0000 0x4000>,
+		 *   interrupts = <0x102 0x103 0x104>,
+		 *   interrupt-names = "JOB", "MMU", "GPU"
+		 * The previous node (gpu@f4080000, "arm,mali-g72", irq 172/173/174,
+		 * "gp"/"gpmmu"/"pp") was a leftover from hikey970 and matched
+		 * neither the real hardware nor any mainline driver.
+		 *
+		 * The vendor describes the GPU with "arm,malit6xx"/"arm,mali-midgard"
+		 * because it uses Mali's own Midgard kernel driver.  Mainline's
+		 * Panfrost driver (drivers/gpu/drm/panfrost) covers this part too:
+		 * Mali-G72 is a *Bifrost* GPU, and panfrost_gpu.c has
+		 * GPU_MODEL(g72, 0x6001) while panfrost_drv.c's dt_match[] has
+		 * { .compatible = "arm,mali-bifrost" }.
+		 *
+		 * The GPU clock (clk_g3d) and rail (g3d) are controlled by
+		 * LPM3 over IPC: the clock comes from hi3670-stub-clk (channel
+		 * 13) and the rail from hi3670-lpm-regulator (channel 14).
+		 * Board files enable both; the node stays disabled until that
+		 * power sequencing has been verified on hardware.
+		 */
+		gpu: gpu@e82c0000 {
+			compatible = "arm,mali-bifrost";
+			reg = <0x0 0xe82c0000 0x0 0x4000>;
+			interrupts = <GIC_SPI 258 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 259 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 260 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "job", "mmu", "gpu";
+			status = "disabled";
+		};
+
+		iomcu_rst: reset {
+			compatible = "hisilicon,hi3660-reset";
+			hisi,rst-syscon = <&iomcu>;
+			#reset-cells = <2>;
+		};
+
+		uart0: serial@fdf02000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x0 0xfdf02000 0x0 0x1000>;
+			interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_UART0>,
+				 <&crg_ctrl HI3670_PCLK>;
+			clock-names = "uartclk", "apb_pclk";
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart0_pmx_func &uart0_cfg_func>;
+			status = "disabled";
+		};
+
+		uart1: serial@fdf00000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x0 0xfdf00000 0x0 0x1000>;
+			interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_UART1>,
+				 <&crg_ctrl HI3670_PCLK>;
+			clock-names = "uartclk", "apb_pclk";
+			status = "disabled";
+		};
+
+		uart2: serial@fdf03000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x0 0xfdf03000 0x0 0x1000>;
+			interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_UART2>,
+				 <&crg_ctrl HI3670_PCLK>;
+			clock-names = "uartclk", "apb_pclk";
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart2_pmx_func &uart2_cfg_func>;
+			status = "disabled";
+		};
+
+		uart3: serial@ffd74000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x0 0xffd74000 0x0 0x1000>;
+			interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_UART3>,
+				 <&crg_ctrl HI3670_PCLK>;
+			clock-names = "uartclk", "apb_pclk";
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart3_pmx_func &uart3_cfg_func>;
+			status = "disabled";
+		};
+
+		uart4: serial@fdf01000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x0 0xfdf01000 0x0 0x1000>;
+			interrupts = <GIC_SPI 77 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_UART4>,
+				 <&crg_ctrl HI3670_PCLK>;
+			clock-names = "uartclk", "apb_pclk";
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart4_pmx_func &uart4_cfg_func>;
+			status = "disabled";
+		};
+
+		uart5: serial@fdf05000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x0 0xfdf05000 0x0 0x1000>;
+			interrupts = <GIC_SPI 78 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_UART5>,
+				 <&crg_ctrl HI3670_PCLK>;
+			clock-names = "uartclk", "apb_pclk";
+			status = "disabled";
+		};
+
+		uart6: serial@fff32000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x0 0xfff32000 0x0 0x1000>;
+			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_UART6>,
+				 <&crg_ctrl HI3670_PCLK>;
+			clock-names = "uartclk", "apb_pclk";
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart6_pmx_func &uart6_cfg_func>;
+			status = "disabled";
+		};
+
+		dma0: dma@fdf30000 {
+			compatible = "hisilicon,k3-dma-1.0";
+			reg = <0x0 0xfdf30000 0x0 0x1000>;
+			#dma-cells = <1>;
+			dma-channels = <16>;
+			dma-requests = <32>;
+			dma-channel-mask = <0xfffe>;
+			interrupts = <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_DMAC>;
+		};
+
+		gpio0: gpio@e8a0b000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a0b000 0x0 0x1000>;
+			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 1 0 1 &pmx0 3 1 5>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO0>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio1: gpio@e8a0c000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a0c000 0x0 0x1000>;
+			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO1>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio2: gpio@e8a0d000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a0d000 0x0 0x1000>;
+			interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 1 6 7>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO2>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio3: gpio@e8a0e000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a0e000 0x0 0x1000>;
+			interrupts = <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 0 13 4 &pmx0 7 17 1>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO3>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio4: gpio@e8a0f000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a0f000 0x0 0x1000>;
+			interrupts = <GIC_SPI 88 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 0 18 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO4>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio5: gpio@e8a10000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a10000 0x0 0x1000>;
+			interrupts = <GIC_SPI 89 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 0 26 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO5>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio6: gpio@e8a11000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a11000 0x0 0x1000>;
+			interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 1 34 7>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO6>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio7: gpio@e8a12000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a12000 0x0 0x1000>;
+			interrupts = <GIC_SPI 91 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 0 41 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO7>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio8: gpio@e8a13000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a13000 0x0 0x1000>;
+			interrupts = <GIC_SPI 92 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 0 49 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO8>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio9: gpio@e8a14000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a14000 0x0 0x1000>;
+			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 0 57 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO9>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio10: gpio@e8a15000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a15000 0x0 0x1000>;
+			interrupts = <GIC_SPI 94 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 0 65 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO10>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio11: gpio@e8a16000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a16000 0x0 0x1000>;
+			interrupts = <GIC_SPI 95 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 0 73 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO11>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio12: gpio@e8a17000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a17000 0x0 0x1000>;
+			interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx0 0 81 1>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO12>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio13: gpio@e8a18000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a18000 0x0 0x1000>;
+			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO13>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio14: gpio@e8a19000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a19000 0x0 0x1000>;
+			interrupts = <GIC_SPI 98 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO14>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio15: gpio@e8a1a000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a1a000 0x0 0x1000>;
+			interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO15>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio16: gpio@e8a1b000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a1b000 0x0 0x1000>;
+			interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx5 0 0 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO16>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio17: gpio@e8a1c000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a1c000 0x0 0x1000>;
+			interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx5 0 8 2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO17>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio18: gpio@fff28000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xfff28000 0x0 0x1000>;
+			interrupts = <GIC_SPI 102 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx1 4 42 4>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&sctrl HI3670_PCLK_GPIO18>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio19: gpio@fff29000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xfff29000 0x0 0x1000>;
+			interrupts = <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx1 0 61 2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&sctrl HI3670_PCLK_GPIO19>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio20: gpio@e8a1f000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a1f000 0x0 0x1000>;
+			interrupts = <GIC_SPI 104 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx7 0 0 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO20>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio21: gpio@e8a20000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xe8a20000 0x0 0x1000>;
+			interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx7 0 8 4>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&crg_ctrl HI3670_PCLK_GPIO21>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio22: gpio@fff0b000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xfff0b000 0x0 0x1000>;
+			interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			/* GPIO176 */
+			gpio-ranges = <&pmx1 2 0 6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&sctrl HI3670_PCLK_AO_GPIO0>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio23: gpio@fff0c000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xfff0c000 0x0 0x1000>;
+			interrupts = <GIC_SPI 107 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			/* GPIO184 */
+			gpio-ranges = <&pmx1 0 6 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&sctrl HI3670_PCLK_AO_GPIO1>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio24: gpio@fff0d000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xfff0d000 0x0 0x1000>;
+			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			/* GPIO192 */
+			gpio-ranges = <&pmx1 0 14 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&sctrl HI3670_PCLK_AO_GPIO2>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio25: gpio@fff0e000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xfff0e000 0x0 0x1000>;
+			interrupts = <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			/* GPIO200 */
+			gpio-ranges = <&pmx1 0 22 8>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&sctrl HI3670_PCLK_AO_GPIO3>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio26: gpio@fff0f000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xfff0f000 0x0 0x1000>;
+			interrupts = <GIC_SPI 110 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			/* GPIO208 */
+			gpio-ranges = <&pmx1 0 30 1>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&sctrl HI3670_PCLK_AO_GPIO4>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio27: gpio@fff10000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xfff10000 0x0 0x1000>;
+			interrupts = <GIC_SPI 111 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			/* GPIO216 */
+			gpio-ranges = <&pmx1 4 31 4>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&sctrl HI3670_PCLK_AO_GPIO5>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio28: gpio@fff1d000 {
+			compatible = "arm,pl061", "arm,primecell";
+			reg = <0x0 0xfff1d000 0x0 0x1000>;
+			interrupts = <GIC_SPI 141 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pmx1 1 35 7>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&sctrl HI3670_PCLK_AO_GPIO6>;
+			clock-names = "apb_pclk";
+		};
+
+		/* UFS */
+		ufs: ufs@ff3c0000 {
+			compatible = "hisilicon,hi3670-ufs", "jedec,ufs-2.1";
+			/* 0: HCI standard */
+			/* 1: UFS SYS CTRL */
+			reg = <0x0 0xff3c0000 0x0 0x1000>,
+				<0x0 0xff3e0000 0x0 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 278 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_UFSIO_REF>,
+				 <&crg_ctrl HI3670_CLK_GATE_UFS_SUBSYS>;
+			clock-names = "ref_clk", "phy_clk";
+			freq-table-hz = <0 0>,
+					<0 0>;
+			/* offset: 0x84; bit: 12 */
+			resets = <&crg_rst 0x84 12>;
+			reset-names = "rst";
+		};
+
+		/* SD */
+		dwmmc1: mmc@ff37f000 {
+			compatible = "hisilicon,hi3670-dw-mshc",
+				     "hisilicon,hi3660-dw-mshc";
+			reg = <0x0 0xff37f000 0x0 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 139 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_SD>,
+				<&crg_ctrl HI3670_HCLK_GATE_SD>;
+			clock-names = "ciu", "biu";
+			clock-frequency = <3200000>;
+			resets = <&crg_rst 0x94 18>;
+			reset-names = "reset";
+			hisilicon,peripheral-syscon = <&sctrl>;
+			card-detect-delay = <200>;
+			status = "disabled";
+		};
+
+		/* SDIO */
+		dwmmc2: mmc@fc183000 {
+			compatible = "hisilicon,hi3670-dw-mshc",
+				     "hisilicon,hi3660-dw-mshc";
+			reg = <0x0 0xfc183000 0x0 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_SDIO>,
+				<&crg_ctrl HI3670_HCLK_GATE_SDIO>;
+			clock-names = "ciu", "biu";
+			clock-frequency = <3200000>;
+			resets = <&crg_rst 0x94 20>;
+			reset-names = "reset";
+			card-detect-delay = <200>;
+			status = "disabled";
+		};
+
+		/* I2C */
+		i2c0: i2c@ffd71000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0xffd71000 0x0 0x1000>;
+			interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+			clocks = <&iomcu HI3670_CLK_GATE_I2C0>;
+			resets = <&iomcu_rst 0x20 3>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c0_pmx_func &i2c0_cfg_func>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@ffd72000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0xffd72000 0x0 0x1000>;
+			interrupts = <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+			clocks = <&iomcu HI3670_CLK_GATE_I2C1>;
+			resets = <&iomcu_rst 0x20 4>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c1_pmx_func &i2c1_cfg_func>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@ffd73000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0xffd73000 0x0 0x1000>;
+			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+			clocks = <&iomcu HI3670_CLK_GATE_I2C2>;
+			resets = <&iomcu_rst 0x20 5>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c2_pmx_func &i2c2_cfg_func>;
+			status = "disabled";
+		};
+
+		/* IOMCU I2C6 - Hi6523 charger on COR-AL00 */
+		i2c6: i2c@ffd6a000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0xffd6a000 0x0 0x1000>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL_HIGH>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+			clocks = <&iomcu HI3670_CLK_GATE_I2C6>;
+			resets = <&iomcu_rst 0x20 27>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@fdf0c000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0xfdf0c000 0x0 0x1000>;
+			interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL_HIGH>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_I2C3>;
+			resets = <&crg_rst 0x78 7>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c3_pmx_func &i2c3_cfg_func>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@fdf0d000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0xfdf0d000 0x0 0x1000>;
+			interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_I2C4>;
+			resets = <&crg_rst 0x78 27>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c4_pmx_func &i2c4_cfg_func>;
+			status = "disabled";
+		};
+
+		/*
+		 * USB3 OTG block: the 4 KiB register window at 0xff200000 holds
+		 * the misc/BC registers shared with the PHY, so describe it as a
+		 * syscon and hang the mainline "hisilicon,hi3670-usb-phy" child
+		 * off it (the PHY driver looks up its parent regmap as
+		 * usb31misc).  Layout follows the Hi3660 binding.
+		 */
+		usb3_otg_bc: usb3_otg_bc@ff200000 {
+			compatible = "hisilicon,hi3670-usb3-otg-bc", "syscon",
+				     "simple-mfd";
+			reg = <0x0 0xff200000 0x0 0x1000>;
+			status = "disabled";
+
+			usb_phy: usb-phy {
+				compatible = "hisilicon,hi3670-usb-phy";
+				#phy-cells = <0>;
+				hisilicon,pericrg-syscon = <&crg_ctrl>;
+				hisilicon,pctrl-syscon = <&pctrl>;
+				hisilicon,sctrl-syscon = <&sctrl>;
+				hisilicon,eye-diagram-param = <0xfdfee4>;
+				hisilicon,tx-vboost-lvl = <0x5>;
+			};
+
+			bc12: bc12 {
+				compatible = "hisilicon,hi3670-bc12";
+				usb-role-switch = <&dwc3>;
+			};
+		};
+
+		/* USB3 DWC3 */
+		dwc3: usb@ff100000 {
+			compatible = "snps,dwc3";
+			reg = <0x0 0xff100000 0x0 0x100000>;
+			interrupts = <GIC_SPI 159 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 161 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "irq", "otg_irq";
+			/*
+			 * hclk is the register bus clock (dwc3 "bus_early"); the
+			 * abb USB clock is the controller reference.  The aclk is
+			 * not used for rate calculations, so it is attached as the
+			 * (enable-only) "utmi" clock to keep it running.
+			 */
+			clocks = <&crg_ctrl HI3670_HCLK_GATE_USB3OTG>,
+				 <&crg_ctrl HI3670_CLK_GATE_ABB_USB>,
+				 <&crg_ctrl HI3670_ACLK_GATE_USB3DVFS>;
+			clock-names = "bus_early", "ref", "utmi";
+			/*
+			 * PERI_CRG_PERRSTEN4 (0x90) bits 6/7: USB3OTG 32K and
+			 * misc-block resets.  The reset driver asserts at 0x90
+			 * and deasserts at 0x94, matching the vendor sequences
+			 * in hisi_usb3_31phy.c.
+			 */
+			resets = <&crg_rst 0x90 6>, <&crg_rst 0x90 7>;
+			phys = <&usb_phy>;
+			phy-names = "usb3-phy";
+			dr_mode = "otg";
+			usb-role-switch;
+			phy_type = "utmi";
+			maximum-speed = "super-speed";
+			snps,dis_u2_susphy_quirk;
+			snps,dis_u3_susphy_quirk;
+			snps,tx_de_emphasis_quirk;
+			snps,tx_de_emphasis = <1>;
+			status = "disabled";
+		};
+
+		/* PCIe */
+		pcie: pcie@f4000000 {
+			compatible = "hisilicon,kirin970-pcie";
+			reg = <0x0 0xf4000000 0x0 0x1000>,
+			      <0x0 0xf4008000 0x0 0x4000>;
+			reg-names = "ctrl", "apb";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			#interrupt-cells = <1>;
+			device_type = "pci";
+			/*
+			 * 32-bit non-prefetchable PCI memory window, taken from
+			 * the vendor kirin970_pcie.dtsi ranges for RC0. Without
+			 * it the node is not a valid PCI bridge and every child
+			 * reg/bus-range below it fails dtc's pci checks too.
+			 */
+			ranges = <0x02000000 0x0 0xf5000000 0x0 0xf5000000 0x0 0x02000000>;
+			interrupts = <GIC_SPI 250 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "msi";
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &gic 0 GIC_SPI 247 IRQ_TYPE_LEVEL_HIGH>,
+					<0 0 0 2 &gic 0 GIC_SPI 248 IRQ_TYPE_LEVEL_HIGH>,
+					<0 0 0 3 &gic 0 GIC_SPI 249 IRQ_TYPE_LEVEL_HIGH>,
+					<0 0 0 4 &gic 0 GIC_SPI 250 IRQ_TYPE_LEVEL_HIGH>;
+			bus-range = <0x0 0x1>;
+			clocks = <&crg_ctrl HI3670_ACLK_GATE_PCIE>;
+			resets = <&crg_rst 0x40 16>;
+			reset-names = "pcie";
+			hisilicon,noc-target-id = <0x17>;
+			status = "disabled";
+		};
+
+		/*
+		 * Temperature sensors.  The TSENSOR registers are only
+		 * accessible from secure firmware, so the driver reads them
+		 * through an SMC call.
+		 */
+		tsens: thermal-sensor {
+			compatible = "hisilicon,hi3670-tsensor";
+			#thermal-sensor-cells = <1>;
+			hisilicon,adc-start-value = <0x9a>;
+			hisilicon,adc-end-value = <0x398>;
+		};
+
+		thermal-zones {
+			cpu0-thermal {
+				polling-delay-passive = <250>;
+				polling-delay = <1000>;
+				thermal-sensors = <&tsens 0>;
+
+				trips {
+					cpu0_passive: cpu0-passive {
+						temperature = <80000>;
+						hysteresis = <2000>;
+						type = "passive";
+					};
+
+					cpu0-alert {
+						temperature = <85000>;
+						hysteresis = <2000>;
+						type = "hot";
+					};
+
+					cpu0-crit {
+						temperature = <105000>;
+						hysteresis = <2000>;
+						type = "critical";
+					};
+				};
+
+				cooling-maps {
+					map0 {
+						trip = <&cpu0_passive>;
+						cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+					};
+				};
+			};
+
+			cpu1-thermal {
+				polling-delay-passive = <250>;
+				polling-delay = <1000>;
+				thermal-sensors = <&tsens 1>;
+
+				trips {
+					cpu1_passive: cpu1-passive {
+						temperature = <80000>;
+						hysteresis = <2000>;
+						type = "passive";
+					};
+
+					cpu1-alert {
+						temperature = <85000>;
+						hysteresis = <2000>;
+						type = "hot";
+					};
+
+					cpu1-crit {
+						temperature = <105000>;
+						hysteresis = <2000>;
+						type = "critical";
+					};
+				};
+
+				cooling-maps {
+					map0 {
+						trip = <&cpu1_passive>;
+						cooling-device = <&cpu4 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+					};
+				};
+			};
+
+			gpu-thermal {
+				polling-delay-passive = <250>;
+				polling-delay = <1000>;
+				thermal-sensors = <&tsens 2>;
+
+				trips {
+					gpu-alert {
+						temperature = <85000>;
+						hysteresis = <2000>;
+						type = "hot";
+					};
+
+					gpu-crit {
+						temperature = <105000>;
+						hysteresis = <2000>;
+						type = "critical";
+					};
+				};
+			};
+
+			modem-thermal {
+				polling-delay-passive = <250>;
+				polling-delay = <1000>;
+				thermal-sensors = <&tsens 3>;
+
+				trips {
+					modem-alert {
+						temperature = <85000>;
+						hysteresis = <2000>;
+						type = "hot";
+					};
+
+					modem-crit {
+						temperature = <105000>;
+						hysteresis = <2000>;
+						type = "critical";
+					};
+				};
+			};
+		};
+
+		/* Watchdog - SP805 */
+		watchdog: watchdog@e8a06000 {
+			compatible = "arm,sp805", "arm,primecell";
+			reg = <0x0 0xe8a06000 0x0 0x1000>;
+			/*
+			 * The GIC is #interrupt-cells = <3>, so the leading cell
+			 * is redundant: it is the SPI type marker, which GIC_SPI
+			 * already provides.
+			 */
+			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_CLK_MUX_WD0>,
+				 <&crg_ctrl HI3670_PCLK>;
+			clock-names = "wdog_clk", "apb_pclk";
+			assigned-clocks = <&crg_ctrl HI3670_CLK_MUX_WD0>;
+			assigned-clock-parents = <&crg_ctrl HI3670_CLKIN_REF>;
+			timeout-sec = <24>;
+			status = "okay";
+		};
+
+		/* DPE - Display Processing Engine */
+	dpe: dpe@e8600000 {
+		compatible = "hisilicon,hi3670-dpe";
+		reg = <0x0 0xe8600000 0x0 0xc0000>,  /* DSS */
+		      <0x0 0xfff35000 0x0 0x1000>,   /* PERI_CRG */
+		      <0x0 0xfff0a000 0x0 0x1000>,   /* SCTRL */
+		      <0x0 0xe8a09000 0x0 0x1000>,   /* PCTRL */
+		      <0x0 0xe86c0000 0x0 0x10000>,  /* NOC_DSS */
+		      <0x0 0xfff02000 0x0 0x1000>,   /* MMBUF_CFG */
+		      <0x0 0xfff31000 0x0 0x1000>,   /* PMCTRL */
+		      <0x0 0xe87ff000 0x0 0x1000>;   /* MEDIA_CRG */
+		reg-names = "dss_base", "peri_crg", "sctrl", "pctrl",
+			    "noc_dss", "mmbuf_crg", "pmctrl", "media_crg";
+		interrupts = <GIC_SPI 245 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "dpe_pdp";
+		clocks = <&media1_crg HI3670_ACLK_GATE_DSS>,
+			 <&media1_crg HI3670_PCLK_GATE_DSS>,
+			 <&media1_crg HI3670_CLK_GATE_EDC0>,
+			 <&media1_crg HI3670_CLK_GATE_LDI0>,
+			 <&media1_crg HI3670_CLK_GATE_DSS_AXI_MM>,
+			 <&media1_crg HI3670_PCLK_GATE_MMBUF_CFG>,
+			 <&crg_ctrl HI3670_CLK_GATE_TXDPHY0_REF>,
+			 <&crg_ctrl HI3670_CLK_GATE_TXDPHY0_CFG>,
+			 <&crg_ctrl HI3670_PCLK_GATE_DSI0>;
+		clock-names = "dss_axi_clk",
+			      "dss_pclk_dss_clk",
+			      "dss_pri_clk",
+			      "dss_pxl0_clk",
+			      "dss_mmbuf_clk",
+			      "dss_pclk_mmbuf",
+			      "dss_dphy0_ref_clk",
+			      "dss_dphy0_cfg_clk",
+			      "dss_pclk_dsi0_clk";
+		/*
+		 * No CRG reset: ip_rst_dss does not exist in any PERRSTEN
+		 * register on Hi3670.  The previous "<&crg_rst 0x108 0>"
+		 * pointed at CLKDIV24 (offset 0x108) which is a clock
+		 * divider, not a reset register, so reset_control_deassert
+		 * corrupted it.  The DSS internal GLB_*_RST_EN registers are
+		 * held deasserted by hardware/bootloader defaults.
+		 */
+		status = "disabled";
+		/*
+		 * Input port of the DPE: of_graph_get_port_by_id() leaves the id
+		 * at its 0 default when the node carries no "reg", which is the
+		 * port the DSI host encoder picks up. The soc node's
+		 * #address-cells = <2> would otherwise force a two-cell "reg"
+		 * that the graph_port check rejects, so - exactly as in
+		 * hi6220.dtsi's ade node - the port is left bare.
+		 */
+		port {
+			dpe_out: endpoint {
+				remote-endpoint = <&dsi_in>;
+			};
+		};
+	};
+
+	/* DSI Host Controller */
+	dsi0: dsi@e8601000 {
+		compatible = "hisilicon,hi3670-dsi";
+		reg = <0x0 0xe8601000 0x0 0x400>;
+		clocks = <&crg_ctrl HI3670_PCLK_GATE_DSI0>;
+		clock-names = "pclk";
+		/* ip_prst_dsi0 = PERRSTEN3 (0x84) bit 28 */
+		resets = <&crg_rst 0x84 28>;
+		reset-names = "apb";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+		port {
+			dsi_in: endpoint {
+				remote-endpoint = <&dpe_out>;
+			};
+		};
+	};
+
+	/* SP804 Timer0 - always-on timer */
+		timer0: timer@fff14000 {
+			compatible = "arm,sp804", "arm,primecell";
+			reg = <0x0 0xfff14000 0x0 0x1000>;
+			interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3670_PCLK>;
+			clock-names = "apb_pclk";
+			status = "disabled";
+		};
+
+		/*
+		 * Backlight PWM.  A single-channel PWM block in the IOMCU
+		 * (always-on) region that drives the display backlight.
+		 *
+		 * The vendor tree names this node "hisilicon,hisiblpwm" and
+		 * gives it reg 0xffd75000/0x1000, clocks = <&clk_blpwm>
+		 * (a fixed-factor-clock, div 1 mult 1, off clk_fll_src =
+		 * 134.4 MHz) and fpga_flag = <0>.  The vendor also muxes
+		 * GPIO184/GPIO185 to BLPWM_BL/BLPWM_CABC through pinctrl.
+		 *
+		 * The mainline driver (pwm-hi3670-blpwm.c) exposes it as a
+		 * one-channel PWM chip; the generic pwm-backlight driver
+		 * consumes it via the panel's "backlight" property.
+		 */
+		blpwm: pwm@ffd75000 {
+			compatible = "hisilicon,hi3670-blpwm";
+			reg = <0x0 0xffd75000 0x0 0x1000>;
+			clocks = <&iomcu HI3670_CLK_GATE_BLPWM>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		/*
+		 * SPI3 - the SSP the touch panel lives on.
+		 *
+		 * sys-fdt.dts's spi@fff2a000 carries
+		 *   compatible = "arm,pl022\0arm,primecell";
+		 *   interrupts = <0x138 0x04>;   -> GIC_SPI 312
+		 *   clock-names = "clk_spi3\0apb_pclk";   (both from clk_spi3)
+		 *   clock-rate  = <0x4f27ac0> = 82944000 Hz
+		 *   num-cs      = <0x04>;
+		 * The four children are spi_dev30..33 on CS 0..3; the touch
+		 * panel is spi_dev30@30 (CS 0, spi-max-frequency 0x186a0 = 100 kHz).
+		 *
+		 * Clocks: the vendor's "clk_spi3" is a gate on sctrl at register
+		 * offset 0x1b0 bit 10 (mask 0x400) fed by sc_div_ioperi.  Mainline
+		 * already models exactly that gate as HI3670_CLK_GATE_SPI
+		 * (clk-hi3670.c: hi3670_sctrl_gate_sep_clks[],
+		 *  { HI3670_CLK_GATE_SPI, "clk_gate_spi", "clk_div_ioperi",
+		 *    0x1B0, 10 }), so it is reused here rather than inventing a
+		 * new SPI3 clock.  Both clock-names therefore point at it, which
+		 * also keeps the vendor's "clk_spi3 and pclk_spi3 share one bit"
+		 * behaviour.
+		 *
+		 * The "apb_pclk" entry is mandatory, not optional:
+		 * drivers/amba/bus.c::amba_get_enable_pclk() does
+		 * clk_get(&dev, "apb_pclk") and hard-fails (not -EPROBE_DEFER)
+		 * when it is missing, so the peripheral-ID registers could never
+		 * be read and pl022 would never match.  This is why both names
+		 * must be present even though pl022_probe() itself only takes a
+		 * single unnamed clock (devm_clk_get_enabled(dev, NULL)).
+		 */
+		spi3: spi@fff2a000 {
+			compatible = "arm,pl022", "arm,primecell";
+			reg = <0x0 0xfff2a000 0x0 0x1000>;
+			interrupts = <GIC_SPI 312 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sctrl HI3670_CLK_GATE_SPI>,
+				 <&sctrl HI3670_CLK_GATE_SPI>;
+			clock-names = "sspclk", "apb_pclk";
+			num-cs = <4>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi3_pmx_func &spi3_cfg_func>;
+			status = "disabled";
+		};
+	};
+};

@@ -1,0 +1,116 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+menu "Hisilicon SoC drivers"
+	depends on ARCH_HISI || COMPILE_TEST
+
+config KUNPENG_HCCS
+	tristate "HCCS driver on Kunpeng SoC"
+	depends on ACPI
+	depends on PCC
+	depends on ARM64 || COMPILE_TEST
+	help
+	  The Huawei Cache Coherence System (HCCS) is a multi-chip
+	  interconnection bus protocol.
+	  The performance of application may be affected if some HCCS
+	  ports are not in full lane status, have a large number of CRC
+	  errors and so on. This may support for reducing system power
+	  consumption if there are HCCS ports supported low power feature
+	  on platform.
+
+	  Say M here if you want to include support for querying the
+	  health status and port information of HCCS, or reducing system
+	  power consumption on Kunpeng SoC.
+
+config HISI_ACCURATE_DELAY
+	bool "Hisilicon accurate delay library"
+	default n
+	help
+	  Say yes here to use the Hisilicon accurate delay helper.  The
+	  implementation lives in lib/hisilicon and is used by the
+	  platform drivers that need a calibrated busy-wait.
+
+config HISI_CMDLINE_PARSE
+	bool "Hisilicon boot command line parser"
+	default n
+	help
+	  Say Y here to parse the Hisilicon-specific boot command line
+	  fragments and expose the getters used by NVE and the power
+	  drivers.
+
+config HISI_SECS_CTRL
+	bool "Hisilicon SECS power controller"
+	default n
+	help
+	  Say yes here to support the HISI SECS secure power rail used by
+	  the secure monitor call helpers.
+
+config SECURE_TEST
+	bool "Secure Test"
+	default n
+	depends on HISI_SECS_CTRL
+	help
+	  Secure Test: in adb shell, use the following commands to test:
+	  "echo 2 > proc/secure-test" to test secure_timer_SR
+	  "echo mem > sys/power/state" into SR
+	  "echo 3 > proc/secure-test" to test aocc_key_SR
+
+config DRMDRIVER
+	tristate "Hisilicon DRM module driver"
+	default n
+	help
+	  Provides the secure configuration channel between the kernel
+	  and BL31, plus the DRM module ioctl interface.
+
+config HISI_HW_VOTE
+	bool "Hisilicon hardware frequency vote"
+	default n
+	help
+	  Say Y here to enable the HiSilicon hardware frequency vote
+	  aggregator.  The PMCTRL block combines frequency votes from
+	  several masters and exposes the winning value to consumers such
+	  as CPUfreq and devfreq drivers.
+
+config HISI_DDRC_SEC
+	bool "Hisilicon DDR secure protection"
+	depends on DRMDRIVER && HISI_BB
+	default n
+	help
+	  Say Y here to enable dynamic DDR secure region programming and
+	  DMSS FIQ reporting.  The secure monitor owns the DDR firewall;
+	  this driver fills the descriptor in the BL31 shared memory window
+	  and issues the matching SMC.
+
+config HISI_SYSCOUNTER
+	bool "Hisilicon system counter driver"
+	default n
+	help
+	  Say Y here to enable the HiSilicon always-on system counter.
+	  The driver exposes helpers that convert counter timestamps from
+	  firmware or remote processors to the kernel's timespec64.
+
+config HISI_NOC
+	bool "Hisilicon NoC error monitor"
+	depends on HISI_BB
+	default n
+	help
+	  Say yes here to enable the HiSilicon Network-on-Chip (NoC) error
+	  monitor.  The driver configures the NoC error probes, collects
+	  fault information (initiator/target flow, address, operation and
+	  security attributes) and reports it through the platform
+	  maintenance (RDR) framework for offline analysis.
+
+config HISI_HHEE
+	bool "Hisilicon HHEE hypervisor interface"
+	depends on HISI_BB
+	depends on ARM64 || COMPILE_TEST
+	default n
+	help
+	  Say yes here to enable the HiSilicon HHEE hypervisor interface.
+	  The driver handles exceptions reported by the EL2 firmware over
+	  a shared message queue, forwards them to the platform maintenance
+	  (RDR) framework, and exposes the firmware log buffers through
+	  debugfs.
+
+source "drivers/soc/hisilicon/rdr/Kconfig"
+
+endmenu

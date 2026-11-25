@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config HISI_ICS_IPU
+	bool "Hisilicon Cambricon IPU support"
+	depends on ARCH_HISI || COMPILE_TEST
+	depends on IOMMU_API
+	depends on ARM64
+	select DMA_SHARED_BUFFER
+	help
+	  Support for the Cambricon IPU (NPU) found on Kirin 970.
+	  This provides the character device, clock/power, SMMU and
+	  maintenance interfaces. Firmware and userspace runtime are
+	  still required for actual inference.

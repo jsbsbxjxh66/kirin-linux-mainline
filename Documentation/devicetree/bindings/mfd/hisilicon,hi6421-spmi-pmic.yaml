@@ -1,0 +1,151 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/mfd/hisilicon,hi6421-spmi-pmic.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: HiSilicon 6421v600 SPMI PMIC
+
+maintainers:
+  - Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+
+description: |
+  HiSilicon 6421v600 should be connected inside a MIPI System Power Management
+  (SPMI) bus. It provides interrupts and power supply.
+
+  The GPIO and interrupt settings are represented as part of the top-level PMIC
+  node.
+
+  The SPMI controller part is provided by
+  Documentation/devicetree/bindings/spmi/hisilicon,hisi-spmi-controller.yaml
+
+properties:
+  $nodename:
+    pattern: "pmic@[0-9a-f]"
+
+  compatible:
+    const: hisilicon,hi6421v600-spmi
+
+  reg:
+    maxItems: 1
+
+  '#interrupt-cells':
+    const: 2
+
+  interrupt-controller: true
+
+  interrupts:
+    maxItems: 1
+
+  clock:
+    $ref: /schemas/clock/hisilicon,hi6421v600-clk.yaml#
+
+  coul:
+    $ref: /schemas/power/supply/hisilicon,hi6421v600-coul.yaml#
+
+  pmic-mntn:
+    $ref: /schemas/mfd/hisilicon,hi6421v600-mntn.yaml#
+
+  ponkey:
+    $ref: /schemas/input/hisilicon,hi6421v600-powerkey.yaml#
+
+  rtc:
+    $ref: /schemas/rtc/hisilicon,hi6421v600-rtc.yaml#
+
+  led-controller:
+    $ref: /schemas/leds/hisilicon,hi6421v600-led.yaml#
+
+  regulators:
+    type: object
+
+    additionalProperties: false
+
+    patternProperties:
+      '^ldo[0-9]+$':
+        type: object
+
+        $ref: /schemas/regulator/regulator.yaml#
+
+        unevaluatedProperties: false
+
+required:
+  - compatible
+  - reg
+  - regulators
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/spmi/spmi.h>
+
+    spmi {
+        #address-cells = <2>;
+        #size-cells = <0>;
+
+        pmic@0 {
+            compatible = "hisilicon,hi6421v600-spmi";
+            reg = <0 SPMI_USID>;
+
+            #interrupt-cells = <2>;
+            interrupt-controller;
+            interrupt-parent = <&gpio28>;
+            interrupts = <0 0>;
+
+            regulators {
+                ldo3 {
+                    regulator-boot-on;
+                    regulator-max-microvolt = <2000000>;
+                    regulator-min-microvolt = <1500000>;
+                    regulator-name = "ldo3";
+                };
+
+                ldo4 {
+                    regulator-boot-on;
+                    regulator-max-microvolt = <1900000>;
+                    regulator-min-microvolt = <1725000>;
+                    regulator-name = "ldo4";
+                };
+
+                ldo9 {
+                    regulator-boot-on;
+                    regulator-max-microvolt = <3300000>;
+                    regulator-min-microvolt = <1750000>;
+                    regulator-name = "ldo9";
+                };
+
+                ldo15 {
+                    regulator-always-on;
+                    regulator-max-microvolt = <3000000>;
+                    regulator-min-microvolt = <1800000>;
+                    regulator-name = "ldo15";
+                };
+
+                ldo16 {
+                    regulator-boot-on;
+                    regulator-max-microvolt = <3000000>;
+                    regulator-min-microvolt = <1800000>;
+                    regulator-name = "ldo16";
+                };
+
+                ldo17 {
+                    regulator-max-microvolt = <3300000>;
+                    regulator-min-microvolt = <2500000>;
+                    regulator-name = "ldo17";
+                };
+
+                ldo33 {
+                    regulator-boot-on;
+                    regulator-max-microvolt = <3300000>;
+                    regulator-min-microvolt = <2500000>;
+                    regulator-name = "ldo33";
+                };
+
+                ldo34 {
+                    regulator-max-microvolt = <3300000>;
+                    regulator-min-microvolt = <2600000>;
+                    regulator-name = "ldo34";
+                };
+            };
+        };
+    };

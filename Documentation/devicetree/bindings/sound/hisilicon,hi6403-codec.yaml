@@ -1,0 +1,183 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/sound/hisilicon,hi6403-codec.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi6403 audio codec
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The Hi6403 codec is a child of the Hi64xx interrupt controller and is
+  accessed through the Hi64xx codec controller. The properties below describe
+  the board-specific analogue configuration.
+
+properties:
+  compatible:
+    const: hisilicon,hi6403-codec
+
+  hisilicon,classh_rcv_hp_switch:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Enable the class-H receiver/headphone switch.
+
+  hisilicon,hp_high_low_change_enable:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Enable headphone high/low impedance change detection.
+
+  hisilicon,hp_res_detect_enable:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Enable headphone resistance detection.
+
+  hisilicon,mic_num:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Number of microphones.
+
+  hisilicon,hs_det:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Headset detection polarity configuration.
+
+  hisilicon,hs_ctrl:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Headset detection control register value.
+
+  hisilicon,hs_det_trigger:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Headset detection comparator mode selector.
+
+  hisilicon,coefficient:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: MBHC SAR ADC full-scale coefficient in millivolts.
+
+  hisilicon,hs_3_pole_min_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Minimum voltage for a three-pole headset.
+
+  hisilicon,hs_3_pole_max_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Maximum voltage for a three-pole headset.
+
+  hisilicon,hs_4_pole_min_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Minimum voltage for a four-pole headset.
+
+  hisilicon,hs_4_pole_max_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Maximum voltage for a four-pole headset.
+
+  hisilicon,hs_extern_cable_min_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Minimum voltage for an external headset cable.
+
+  hisilicon,hs_extern_cable_max_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Maximum voltage for an external headset cable.
+
+  hisilicon,hs_mbhc_vref_reg_value:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: MBHC reference voltage register value.
+
+  hisilicon,hi64xx_irq_reg0:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Interrupt register 0 initial value.
+
+  hs_detect_extern_cable:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Enable external cable detection.
+
+  hisilicon,btn_play_min_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Minimum voltage for the play/pause button.
+
+  hisilicon,btn_play_max_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Maximum voltage for the play/pause button.
+
+  hisilicon,btn_voice_assistant_min_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Minimum voltage for the voice assistant button.
+
+  hisilicon,btn_voice_assistant_max_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Maximum voltage for the voice assistant button.
+
+  hisilicon,btn_volume_up_min_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Minimum voltage for the volume-up button.
+
+  hisilicon,btn_volume_up_max_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Maximum voltage for the volume-up button.
+
+  hisilicon,btn_volume_down_min_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Minimum voltage for the volume-down button.
+
+  hisilicon,btn_volume_down_max_voltage:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Maximum voltage for the volume-down button.
+
+  use_stereo_smartpa:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Configure the smart PA as a stereo device.
+
+  hisilicon,wakeup_hisi_algo_support:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Enable the Hisilicon wakeup algorithm.
+
+  extern_hs_hifi_ak4376_I2S3:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Use the external AK4376 headset path on I2S3.
+
+  hsd_cfg_enable:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Enable the headset detection configuration override.
+
+  hsd_cfg_value:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Headset detection configuration override value.
+
+  gpio_pd_enable:
+    type: boolean
+    description: Enable GPIO pull-down during suspend.
+
+  hisilicon,ir_gpio:
+    $ref: /schemas/types.yaml#/definitions/phandle-array
+    maxItems: 1
+    description: Infrared detection GPIO.
+
+  hisilicon,ear_ir_gpio:
+    $ref: /schemas/types.yaml#/definitions/phandle-array
+    maxItems: 1
+    description: Earpiece infrared detection GPIO.
+
+  hisilicon,bt_tri_gpio:
+    $ref: /schemas/types.yaml#/definitions/phandle-array
+    maxItems: 1
+    description: Bluetooth tri-state control GPIO.
+
+  hisilicon,hac_gpio:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Hearing aid compatibility GPIO number.
+
+  hisilicon,rcv_tdd_gpio:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Receiver TDD control GPIO number.
+
+  fm_enable:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Enable the FM audio path.
+
+  hisilicon,pmu_mclk_addr:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: PMIC master clock control register address.
+
+  micbias_modify:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Enable microphone bias modification.
+
+required:
+  - compatible
+
+additionalProperties: false

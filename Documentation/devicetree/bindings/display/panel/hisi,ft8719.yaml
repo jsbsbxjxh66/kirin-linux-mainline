@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/display/panel/hisi,ft8719.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon-adapted BOE FT8719 MIPI-DSI panel
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description: |
+  BOE FT8719 6.3" 1080x2340 video-mode MIPI-DSI panel, the sibling variant
+  of the TD4320 fitted to the Honor Play (COR-AL00). Both share the same
+  glass, 3 data lanes, 562 Mbps per lane and RGB888, but differ in porches,
+  reset timing and init sequence.
+
+  The vendor prefix is "hisi" for symmetry with "hisi,td4320" and to stay
+  clear of upstream's "ebbg,ft8719"
+  (drivers/gpu/drm/panel/panel-ebbg-ft8719.c), which describes a different
+  1080x2246 panel with its own supply names.
+
+allOf:
+  - $ref: panel-common.yaml#
+
+properties:
+  compatible:
+    const: hisi,ft8719
+
+  reg:
+    maxItems: 1
+    description: DSI virtual channel of the peripheral
+
+  reset-gpios:
+    description: |
+      Panel reset, active low. The driver's probe default is
+      GPIOD_OUT_HIGH, i.e. the panel boots held in reset until the
+      prepare sequence releases it.
+
+  iovcc-supply:
+    description: 1.8 V MIPI I/O rail
+
+  vsp-supply:
+    description: |
+      Positive bias rail (+5.5 V). Optional - on the COR-AL00 it comes
+      from an on-board bias IC with no mainline driver, so it is left
+      unbound and the driver tolerates its absence.
+
+  vsn-supply:
+    description: Negative bias rail (-5.5 V), same caveat as vsp-supply
+
+required:
+  - compatible
+  - reg
+  - reset-gpios
+  - port
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/gpio/gpio.h>
+
+    dsi {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        panel@0 {
+            compatible = "hisi,ft8719";
+            reg = <0>;
+
+            backlight = <&backlight>;
+            iovcc-supply = <&ldo4>;
+
+            reset-gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
+
+            port {
+                endpoint {
+                    remote-endpoint = <&dsi_out>;
+                };
+            };
+        };
+    };
+
+...

@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/sound/hisilicon,hi64xx-irq.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi64xx audio codec interrupt controller
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The Hi64xx interrupt controller is a nested controller behind the Hi64xx
+  codec controller. The physical interrupt is requested by the codec
+  controller; this node only provides the virtual interrupt domain for the
+  codec child devices.
+
+properties:
+  compatible:
+    const: hisilicon,hi64xx-irq
+
+  interrupt-controller: true
+
+  "#interrupt-cells":
+    const: 2
+
+  "hi6403-codec":
+    $ref: hisilicon,hi6403-codec.yaml#
+
+required:
+  - compatible
+  - interrupt-controller
+  - "#interrupt-cells"
+
+additionalProperties: false

@@ -1,0 +1,132 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# Hisilicon Hi110x wireless connectivity combo (WLAN + BFGX transport)
+#
+
+menuconfig HISI_CONNECTIVITY
+	bool "Hisilicon Hi110x wireless connectivity"
+	depends on CFG80211
+	depends on WIRELESS
+	depends on MMC
+	help
+	  Support for the Hisilicon Hi1102/Hi1102A/Hi1103 wireless
+	  connectivity combo chips.  This provides the SDIO/PCIe WLAN
+	  driver and the shared BFGX transport used by the companion
+	  Bluetooth HCI driver (CONFIG_BT_HI1102).
+
+	  The three chip variants expose the same symbol names and can
+	  therefore only be built one at a time.
+
+if HISI_CONNECTIVITY
+
+choice
+	prompt "Connectivity chip variant"
+	default HISI_CONNECTIVITY_HI1102
+	help
+	  Select the connectivity chip mounted on the board.  Note the chip
+	  and the driver stack are independent: the Hi1102 chip (and Hi1102A)
+	  are driven by the "1102a" driver stack (drivers/net/wireless/hisi/
+	  hi1102a/), which is the only stack ported to this kernel.  The
+	  runtime chip identity is taken from DT (hi110x,subchip_type), not
+	  from this choice.
+
+config HISI_CONNECTIVITY_HI1102
+	bool "Hi1102"
+	help
+	  Kirin 970 generation Hi1102 combo chip (WLAN + BT/FM/GNSS).  Builds
+	  the ported 1102a driver stack, which loads Hi1102 firmware from
+	  /vendor/firmware at runtime.
+
+config HISI_CONNECTIVITY_HI1102A
+	bool "Hi1102A"
+	help
+	  Same driver stack as Hi1102 (the 1102a stack); kept as an explicit
+	  alias for boards whose OTP identifies the chip as Hi1102A.
+
+config HISI_CONNECTIVITY_HI1103
+	bool "Hi1103"
+	help
+	  Kirin 980 generation chip.  The hi1103/ tree is NOT ported to this
+	  kernel yet; selecting it will fail to build.
+
+endchoice
+
+config HISI_CONNECTIVITY_HI1102_LEGACY
+	bool "Hi1102 legacy stack (unported)"
+	depends on !HISI_CONNECTIVITY_HI1102 && !HISI_CONNECTIVITY_HI1102A
+	default n
+	help
+	  Vendor drivers/connectivity/hisi/ mirror (drivers/net/wireless/
+	  hisi/hi1102/, _PRE_PRODUCT_VERSION=1102).  NOT ported to this
+	  kernel: it still uses APIs removed from mainline (wireless ext,
+	  old firmware loader) and will not compile.  Enable only to work
+	  on porting it.
+
+config HI1102_PLAT_HW_CHR
+	bool "Hi110x hardware CHR logging"
+	default y
+	help
+	  Log connectivity hardware channel (CHR) events through the
+	  platform driver.
+
+config HI110X_PLAT_BB
+	bool "Hi110x baseband monitoring"
+	default n
+	help
+	  Include the BFGX baseband monitor.  Only useful for bring-up
+	  and firmware debugging.
+
+config HI110X_SDIO_STD_CARD_SUPPORT
+	bool "Hi110x standard SDIO card support"
+	default n
+	help
+	  Use the standard SDIO card initialisation path instead of the
+	  vendor non-standard one.
+
+config HI110X_GPS_REFCLK
+	bool "Hi110x GNSS reference clock"
+	default y
+	help
+	  Route the modem reference clock to the GNSS block.
+
+choice
+	prompt "GNSS reference clock source"
+	depends on HI110X_GPS_REFCLK
+	default HI110X_GPS_REFCLK_SRC_3
+	help
+	  Select which modem clock output feeds the GNSS reference
+	  clock input on this platform.
+
+config HI110X_GPS_REFCLK_SRC_1
+	bool "Modem GPS one clock"
+
+config HI110X_GPS_REFCLK_SRC_2
+	bool "Modem GPS two clock"
+
+config HI110X_GPS_REFCLK_SRC_3
+	bool "Modem GPS three clock"
+
+endchoice
+
+config HI110X_GPS_REFCLK_INTERFACE
+	bool "Hi110x GNSS reference clock interface"
+	depends on HI110X_GPS_REFCLK
+	default n
+	help
+	  Export the GNSS reference clock through the hwgps interface.
+
+config HI110X_GPS_SYNC
+	bool "Hi110x GNSS time synchronisation"
+	depends on HI110X_GPS_REFCLK
+	default y
+	help
+	  Synchronise the GNSS timebase with the modem reference clock.
+
+config ARCH_KIRIN_PCIE
+	bool "Hi110x PCIe transport"
+	depends on PCI
+	default n
+	help
+	  Use PCIe instead of SDIO to talk to the connectivity chip.
+
+endif # HISI_CONNECTIVITY

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config LOAD_IMAGE
+	bool "Hisilicon secure image loader"
+	depends on TZDRIVER
+	help
+	  This driver loads and authenticates secure images for the
+	  Hisilicon modem and HIFI cores through the secure monitor, and
+	  provides the core-reset notification used by the modem driver.

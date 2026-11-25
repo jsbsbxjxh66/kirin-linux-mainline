@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/sound/hisilicon,hi3xxx-hi6403.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi3xxx/Hi6403 audio sound card
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The Hi6403 sound card ties the SLIMbus CPU DAI and the HiFi PCM platform
+  together. The card configuration is static in the machine driver and this
+  node only describes the presence of the card.
+
+properties:
+  compatible:
+    const: hisilicon,hi3xxx-hi6403
+
+  model:
+    description: User-visible sound card name.
+
+required:
+  - compatible
+
+additionalProperties: false

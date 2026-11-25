@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/sound/hisilicon,hi6210-hifi.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi6210/Hi6403 HiFi PCM platform
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The HiFi PCM platform exposes the shared-memory PCM interface between the
+  AP and the Kirin HiFi DSP. It is referenced by the Hi6403 sound card as a
+  platform component.
+
+properties:
+  compatible:
+    const: hisilicon,hi6210-hifi
+
+required:
+  - compatible
+
+additionalProperties: false

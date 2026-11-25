@@ -1,0 +1,106 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/mfd/hisilicon,hi6421v600-mntn.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi6421v600 PMIC OCP/OTMP monitor
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The Hi6421v600 maintenance block monitors PMIC over-current (OCP) and
+  over-temperature (OTMP) events. It records the latched state and can
+  optionally restart the AP on a fatal event.
+
+properties:
+  compatible:
+    const: hisilicon,hi6421v600-mntn
+
+  interrupts:
+    maxItems: 2
+
+  interrupt-names:
+    items:
+      - const: otmp
+      - const: ocp
+
+  hisilicon,ocp-regs:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 8
+    maxItems: 8
+    description: OCP status registers, one per 8-bit register bank.
+
+  hisilicon,record-regs:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    maxItems: 15
+    description: Registers holding the latched fault record.
+
+  hisilicon,otmp-threshold-reg:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 3
+    maxItems: 3
+    description: OTMP threshold field as address, shift and width.
+
+  hisilicon,otmp-threshold-val:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: OTMP threshold field value.
+
+  hisilicon,otmp-hreset-pwrdown-flag:
+    type: boolean
+    description: Enable PMIC power-down on the OTMP hardware reset.
+
+  hisilicon,otmp-hreset-pwrdown-reg:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 3
+    maxItems: 3
+    description: OTMP power-down field as address, shift and width.
+
+  hisilicon,otmp-hreset-pwrdown-val:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: OTMP power-down field value.
+
+  hisilicon,smpl-ctrl-en:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Sample control enable value.
+
+  hisilicon,smpl-ctrl-en-reg:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 3
+    maxItems: 3
+    description: Sample control enable field as address, shift and width.
+
+  hisilicon,smpl-ctrl-time:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: Sample control time value.
+
+  hisilicon,smpl-ctrl-time-reg:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 3
+    maxItems: 3
+    description: Sample control time field as address, shift and width.
+
+  hisilicon,ocp-restart:
+    type: boolean
+    description: Restart the AP after a fatal OCP event.
+
+  hisilicon,otmp-restart:
+    type: boolean
+    description: Restart the AP after a fatal OTMP event.
+
+required:
+  - compatible
+  - interrupts
+  - interrupt-names
+  - hisilicon,record-regs
+  - hisilicon,otmp-threshold-reg
+  - hisilicon,otmp-threshold-val
+  - hisilicon,otmp-hreset-pwrdown-reg
+  - hisilicon,otmp-hreset-pwrdown-val
+  - hisilicon,smpl-ctrl-en
+  - hisilicon,smpl-ctrl-en-reg
+  - hisilicon,smpl-ctrl-time
+  - hisilicon,smpl-ctrl-time-reg
+
+additionalProperties: false

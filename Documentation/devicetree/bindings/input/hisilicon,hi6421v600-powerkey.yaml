@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/input/hisilicon,hi6421v600-powerkey.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Hi6421v600 PMIC power key
+
+maintainers:
+  - Wei Xu <xuwei5@hisilicon.com>
+
+description:
+  The Hi6421v600 PMIC exposes the power key press, release and long-hold
+  interrupts. The long-hold interrupt is reported as KEY_RESTART.
+
+properties:
+  compatible:
+    const: hisilicon,hi6421v600-powerkey
+
+  interrupts:
+    maxItems: 3
+
+  interrupt-names:
+    items:
+      - const: down
+      - const: up
+      - const: hold 4s
+
+required:
+  - compatible
+  - interrupts
+  - interrupt-names
+
+additionalProperties: false
