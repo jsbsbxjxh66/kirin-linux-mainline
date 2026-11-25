@@ -113,6 +113,13 @@ static int __init uniformity_timer_init(void)
 	        return -ENXIO;
 	}
 
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(np)) {
+	        printk("hisilicon,prktimer node disabled.\n");
+	        of_node_put(np);
+	        return -ENXIO;
+	}
+
 	if (addr) {
 		init_time_addr = 0;
 		early_iounmap(addr, SZ_4K);

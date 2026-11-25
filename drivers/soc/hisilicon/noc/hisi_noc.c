@@ -824,6 +824,9 @@ static void register_noc_nodes(void)
 	struct device_node *np;
 
 	for_each_compatible_node(np, NULL, "hisilicon,noc-node") {
+		/* for_each_compatible_node() ignores status; skip disabled blocks */
+		if (!of_device_is_available(np))
+			continue;
 		register_noc_node(np);
 	}
 

@@ -1077,6 +1077,12 @@ static int get_dfx_core_size(void)
 		return -ENODEV;
 	}
 
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(np)) {
+		of_node_put(np);
+		return -ENODEV;
+	}
+
 	ret = of_property_read_u32(np, "dfx_noreboot_size",
 				   &dfx_size_tbl[DFX_NOREBOOT]);
 	if (ret) {

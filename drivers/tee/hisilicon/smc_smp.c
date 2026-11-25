@@ -628,9 +628,19 @@ void siq_dump(int mode)
 static int siq_thread_fn(void *arg)
 {
 	int ret;
-	while(1) {
+
+	/*
+	 * kthread_stop() on this thread only sets KTHREAD_SHOULD_STOP and wakes
+	 * it; waiting on siq_th_run alone would put it straight back to sleep
+	 * and make smc_free_data() block forever.  Put the stop condition into
+	 * the wait so a failed tee_client init can still tear the thread down.
+	 */
+	while (!kthread_should_stop()) {
 		ret = wait_event_interruptible(siq_th_wait,/*lint !e666*/
-				atomic_read(&siq_th_run));
+				atomic_read(&siq_th_run) ||
+				kthread_should_stop());
+		if (kthread_should_stop())
+			break;
 		if (ret) {
 			tloge("wait_event_interruptible failed!\n");
 			return -EINTR;
@@ -639,6 +649,8 @@ static int siq_thread_fn(void *arg)
 		atomic_set(&siq_th_run, 0);/*lint !e1058*/
 		siq_dump(1);
 	}
+
+	return 0;
 }
 
 #define MAX_UPLOAD_INFO_LEN		4

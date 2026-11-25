@@ -179,8 +179,15 @@ int hisi_secs_power_on(void)
 {
 	int ret = 0;
 
+	/*
+	 * No secs_power_ctrl device on this platform (node missing, disabled
+	 * or not probed): there is no secure-clock power rail to drive.  The
+	 * callers only use this as a gate for their SMC and abort on any
+	 * error, so reporting -ENODEV here used to disable the whole TEE SMC
+	 * path.  Nothing to power on == success.
+	 */
 	if (!secs_np)
-		return -ENODEV;
+		return 0;
 
 	mutex_lock(&secs_count_lock);
 	if (SECS_SUSPEND_STATUS == g_secs_suspend_status) {
@@ -249,8 +256,9 @@ int hisi_secs_power_down(void)
 {
 	int ret = 0;
 
+	/* Mirror of hisi_secs_power_on(): nothing was powered up. */
 	if (!secs_np)
-		return -ENODEV;
+		return 0;
 
 	mutex_lock(&secs_count_lock);
 	if (SECS_SUSPEND_STATUS == g_secs_suspend_status) {

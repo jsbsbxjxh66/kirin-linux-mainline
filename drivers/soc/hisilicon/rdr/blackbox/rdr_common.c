@@ -550,6 +550,20 @@ int rdr_common_early_init(void)
 		return -ENODEV;
 	}
 
+	/*
+	 * of_find_compatible_node() ignores status, so a board that disables
+	 * the rdr node would still bring up the whole blackbox framework
+	 * (reserved memory, panic hooks, dump threads).  This is the gate for
+	 * rdr_common_init()/rdr_field_init()/rdr_exception_trace_init(), so
+	 * honour the status here.
+	 */
+	if (!of_device_is_available(np)) {
+		BB_PRINT_ERR("[%s], rdr node is disabled, skip blackbox init.\n",
+			     __func__);
+		of_node_put(np);
+		return -ENODEV;
+	}
+
 	bbox_addr = of_parse_phandle(np, "bbox_addr", 0);
 	if (!bbox_addr) {
 		BB_PRINT_ERR("[%s], no bbox_addr phandle\n", __func__);

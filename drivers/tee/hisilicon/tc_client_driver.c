@@ -2883,6 +2883,21 @@ static __init int tc_init(void)
 		return -ENODEV;
 	}
 
+	/*
+	 * of_find_compatible_node() ignores the node status, so a board that
+	 * keeps /trusted_core for documentation but sets status = "disabled"
+	 * would still get the whole vendor TEE stack: kthreads, the SMC path
+	 * and the deferred command monitor.  Without a TEEOS on this boot
+	 * chain every SMC fails and the half initialised stack keeps running,
+	 * so honour the status like any other driver.
+	 */
+	if (!of_device_is_available(np)) {
+		TCERR("trusted_core node is disabled, skip TEE client init.\n");
+		of_node_put(np);
+		np = NULL;
+		return -ENODEV;
+	}
+
 	ret = alloc_chrdev_region(&tc_ns_client_devt, 0, 1, TC_NS_CLIENT_DEV);
 	if (ret < 0) {
 		TCERR("alloc_chrdev_region failed %d", ret);
@@ -2930,7 +2945,8 @@ static __init int tc_init(void)
 	if (ret < 0)
 		goto class_device_destroy;
 
-	if (tc_mem_init())
+	ret = tc_mem_init();
+	if (ret)
 		goto smc_data_free;
 
 	ret = agent_init();

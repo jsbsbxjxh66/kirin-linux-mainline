@@ -139,6 +139,16 @@ static s32 __init hisi_drm_driver_init(void)
 		return -ENODEV;
 	}
 
+	/*
+	 * of_find_compatible_node() ignores the node status: a disabled
+	 * hisi,share-memory-drm node must not get its shared window ioremapped
+	 * and handed to the DSS security helpers.
+	 */
+	if (!of_device_is_available(np)) {
+		of_node_put(np);
+		return -ENODEV;
+	}
+
 	ret = of_property_read_u32_array(np, "reg", &data[0], 2);
 	if (0 != ret) {
 		if (-EINVAL == ret)

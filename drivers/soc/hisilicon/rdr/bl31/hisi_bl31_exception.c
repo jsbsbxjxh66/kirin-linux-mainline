@@ -148,6 +148,13 @@ static int __init hisi_bl31_panic_init(void)
 		goto err1;
 	}
 
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(np)) {
+		BB_PRINT_ERR("%s: bl31_mntn node disabled.\n", __func__);
+		of_node_put(np);
+		goto err1;
+	}
+
 	ret = of_property_read_u32_array(np, "hisi,bl31-share-mem", &data[0], 2UL);
 	if (ret) {
 		BB_PRINT_ERR("%s , get val mem compatible node err.\n",

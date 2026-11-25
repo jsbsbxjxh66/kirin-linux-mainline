@@ -2471,7 +2471,27 @@ int __init rdr_hisiap_init(void)
 	u32 reboot_type = 0;
 	u32 bootup_keypoint = 0;
 	int ret = 0;
+	struct device_node *np;
+
 	BB_PRINT_PN("%s init start\n", __func__);
+
+	/*
+	 * of_find_compatible_node() ignores the node status, so a board that
+	 * disables /rdr_ap_adapter would still get its reserved memory mapped,
+	 * panic notifiers registered and panic_on_oops forced to 1.  Honour
+	 * the status before touching any hardware.
+	 */
+	np = of_find_compatible_node(NULL, NULL, "hisilicon,rdr_ap_adapter");
+	if (!np) {
+		BB_PRINT_ERR("%s: no rdr_ap_adapter node\n", __func__);
+		return -ENODEV;
+	}
+	if (!of_device_is_available(np)) {
+		BB_PRINT_ERR("%s: rdr_ap_adapter disabled, skip\n", __func__);
+		of_node_put(np);
+		return -ENODEV;
+	}
+	of_node_put(np);
 
 	mutex_init(&dump_mem_mutex);
 

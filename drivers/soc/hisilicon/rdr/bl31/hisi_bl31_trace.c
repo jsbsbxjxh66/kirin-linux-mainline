@@ -290,6 +290,13 @@ static int bl31_trace_addr_len_set(u64 addr, u64 len)
 		return -1;
 	}
 
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(np)) {
+		BB_PRINT_ERR("%s fail: bl31_mntn node disabled.\n", __func__);
+		of_node_put(np);
+		return -1;
+	}
+
 	ret = of_property_read_u32_array(np, "hisi,bl31-share-mem", &data[0], 2UL);
 	if (unlikely(ret)) {
 		BB_PRINT_ERR("%s fail: get val mem compatible node err.\n", __func__);

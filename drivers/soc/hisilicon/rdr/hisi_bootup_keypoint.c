@@ -159,6 +159,12 @@ static void bootup_keypoint_addr_init(void)
 		BB_PRINT_ERR("NOT FOUND device node 'hisilicon,hisifb'!\n");
 		return;
 	}
+
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(np)) {
+		of_node_put(np);
+		return;
+	}
 	ret = of_property_read_u32(np, "fpga_flag", &fpga_flag);
 	if (ret) {
 		BB_PRINT_ERR("failed to get fpga_flag resource.\n");
