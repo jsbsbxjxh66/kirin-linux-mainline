@@ -349,6 +349,12 @@ int mdmcp_coresight_init(void)
         printk(KERN_ERR"can not find %s node!\n",coresight_match[0].compatible);
         return -1;
     }
+    /* of_find_compatible_node() ignores status; honour a disabled node. */
+    if(!of_device_is_available(node))
+    {
+        printk(KERN_ERR"%s node disabled, skip\n",coresight_match[0].compatible);
+        return 0;
+    }
     for_each_child_of_node(node, child)
     {
         mdmcp_coresight_tmc_probe(child);

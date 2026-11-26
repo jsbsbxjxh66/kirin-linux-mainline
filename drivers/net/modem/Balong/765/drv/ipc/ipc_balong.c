@@ -611,6 +611,13 @@ static int ipc_msg_init(void)
         return BSP_ERROR;
     }
 
+    /* of_find_compatible_node() ignores status; honour a disabled node. */
+    if (!of_device_is_available(ptr_device_node))
+    {
+        bsp_trace(BSP_LOG_LEVEL_ERROR,BSP_MODU_IPC, "ipc msg node disabled\n");
+        return BSP_ERROR;
+    }
+
     g_ipc_msg.base_addr = of_iomap(ptr_device_node, 0);
     if (!g_ipc_msg.base_addr)
     {
@@ -657,6 +664,13 @@ static s32  bsp_ipc_probe(struct platform_device *dev)
 	if (!node)
 	{
 		bsp_trace(BSP_LOG_LEVEL_ERROR,BSP_MODU_IPC, "ipc of find fail\n");
+		return MDRV_ERROR;
+	}
+
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(node))
+	{
+		bsp_trace(BSP_LOG_LEVEL_ERROR,BSP_MODU_IPC, "ipc node disabled\n");
 		return MDRV_ERROR;
 	}
 

@@ -111,7 +111,21 @@ static void hwadp_dts_register_base_addr(void)
 int hwadp_init(void)
 {
 	int ret = MDRV_OK;
+	struct device_node *node = NULL;
 	void * addr_ao = NULL, *addr_pd = NULL, *addr_mdm = NULL, *addr_ap_peri = NULL;
+
+	/*
+	 * of_find_compatible_node() ignores status, so a disabled
+	 * hisilicon,hardware_adapt node would still get every sysctrl window
+	 * registered.  Skip the whole adapter when the node is off.
+	 */
+	node = of_find_compatible_node(NULL, NULL, "hisilicon,hardware_adapt");
+	if (!node || !of_device_is_available(node)) {
+		hwadp_printf("hwadp node missing/disabled, skip init.\n");
+		of_node_put(node);
+		return MDRV_OK;
+	}
+	of_node_put(node);
 
 	hwadp_dts_register_base_addr();
 	/* IP base */

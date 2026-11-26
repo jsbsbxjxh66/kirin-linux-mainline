@@ -82,6 +82,12 @@ static int __init pmic_modem_ocp_init(void)
 		return -ENODEV;
 	}
 
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(root)) {
+		of_node_put(root);
+		return -ENODEV;
+	}
+
 	for_each_available_child_of_node(root, child_node) {
 		ocp = kzalloc_obj(*ocp);
 		if (!ocp) {

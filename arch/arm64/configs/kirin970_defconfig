@@ -442,7 +442,11 @@ CONFIG_HISI_RTC_SECURE_FEATURE=y
 # drivers/net/modem/Balong/765/config/product/$(OBB_PRODUCT_NAME)/config, with
 # OBB_PRODUCT_NAME=kirin970 set in Balong/765/Makefile as in the vendor tree.
 # OAM_PS/IMS descend alongside drv/ when OBB_SEPARATE is unset.
-CONFIG_HISI_BALONG_MODEM=y
+# Balong modem is switched off at board level: hi3670-cor-al00.dts disables
+# every modem node (ipc/socp/hds/mperf/hwadp/timers/sysctrl/fiq/icc...).  The
+# tree is built in and its module_inits have no DT node of their own, so DTS
+# cannot stop them; keep the whole subtree out of the kernel instead.
+# CONFIG_HISI_BALONG_MODEM is not set
 # CONFIG_HISI_BALONG_EXTRA_MODEM is not set
 CONFIG_HISI_BALONG_MODEM_HI3650=y
 CONFIG_PMIC_OCP=y

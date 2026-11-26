@@ -180,6 +180,13 @@ static int __init  bsp_mem_init_mperf_info(void)
 		return -1;
 	}	
 
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(np))
+	{
+		s_mem_pr_err("mperf_balong node disabled\n");
+		return -1;
+	}
+
 	ret = of_property_read_u32(np,"nr_cpus", &g_mperf_info.nr_cpus);/*lint !e838*/
 	if (!ret)
 	{

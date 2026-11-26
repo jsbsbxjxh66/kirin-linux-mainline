@@ -139,6 +139,13 @@ static int __init sysctrl_init(void)
 		return -1;
 	}
 
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(node))
+	{
+		sc_pr_err("sysctrl node disabled\n");
+		return -1;
+	}
+
 	ret = of_property_read_u32(node, "reg_sum", &sysctrl.reg_sum);
 	if(ret)
 	{

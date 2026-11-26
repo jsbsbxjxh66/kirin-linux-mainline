@@ -1911,6 +1911,17 @@ s32 socp_init(void)
     }
     /*Add dts end*/
 
+    /*
+     * of_find_compatible_node() ignores status.  A disabled socp node used to
+     * be ioremapped anyway and then reach socp_logbuffer_dmalloc(), where
+     * modem_socp_pdev is still NULL because socp_driver_probe() never ran.
+     */
+    if (!of_device_is_available(dev))
+    {
+        socp_printf("socp_init: socp node disabled, skip\n");
+        return BSP_ERROR;
+    }
+
     g_strSocpStat.baseAddr = (unsigned long)of_iomap(dev,0);
     if(0 == g_strSocpStat.baseAddr)
     {

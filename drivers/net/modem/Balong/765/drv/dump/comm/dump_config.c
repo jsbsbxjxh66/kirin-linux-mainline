@@ -98,6 +98,12 @@ void dump_product_type_init(void)
         return;
     }
 
+    /* of_find_compatible_node() ignores status; honour a disabled node. */
+    if (!of_device_is_available(node))
+    {
+        return;
+    }
+
     if(of_property_read_string(node, "product_type", &product_type))
     {
         dump_fetal("read product_type failed!\n");

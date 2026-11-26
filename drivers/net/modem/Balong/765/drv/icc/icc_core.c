@@ -856,6 +856,13 @@ int icc_channels_init(void)
 		return ICC_ERR;
 	}
 
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(node))
+	{
+		icc_print_error("icc channel node disabled\n");
+		return ICC_ERR;
+	}
+
 	for_each_available_child_of_node(node, child_node)
 	{
 		ret = icc_channels_node_init(child_node);

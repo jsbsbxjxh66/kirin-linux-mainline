@@ -996,6 +996,13 @@ int __init reset_of_node_init(void)
 		return RESET_ERROR;
 	}
 
+	/* of_find_compatible_node() ignores status; honour a disabled node. */
+	if (!of_device_is_available(node))
+	{
+		reset_print_err("cp_reset_app node disabled\n");
+		return RESET_ERROR;
+	}
+
 	ret = of_property_read_u32(node, "scbakdata13", &scbakdata13_offset);
 	if(ret)
 	{

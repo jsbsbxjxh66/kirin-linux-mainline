@@ -358,6 +358,12 @@ static int timer_device_init(void){
 	node = of_find_compatible_node(NULL, NULL, "hisilicon,timer_device");
 	if(node)
 	{
+		/* of_find_compatible_node() ignores status. */
+		if(!of_device_is_available(node))
+		{
+			hardtimer_print_error("timer_device node disabled.\n");
+			return BSP_ERROR;
+		}
 		for_each_available_child_of_node(node, child_node){
 			ret_value = of_property_read_u32(child_node, "request_id", &index) ;
 			if(ret_value)

@@ -149,17 +149,28 @@ static int fiq_init(void)
 	struct device_node temp_node;
 	struct device_node *child_node = &temp_node;
 	u32 index_fiq =0;
-        /*coverity[secure_coding]*/
-	(void)memset((void *)&g_fiq_ctrl,  0, sizeof(struct fiq_ctrl));
-	g_fiq_ctrl.smem_base_addr = (void *)SHM_FIQ_BASE_ADDR;
-        /*coverity[secure_coding]*/
-	(void)memset(g_fiq_ctrl.smem_base_addr,  0, (unsigned long)SHM_SIZE_CCORE_FIQ);
 	node = of_find_compatible_node(NULL, NULL, "hisilicon,fiq");
 	if (!node)
 	{
 		pr_err("[fiq]get hisilicon,fiq fail!\n");
 		return -1;
 	}
+
+	/*
+	 * of_find_compatible_node() ignores status; a disabled fiq node must not
+	 * clear the CCORE shared-memory handshake area or be ioremapped.
+	 */
+	if (!of_device_is_available(node))
+	{
+		pr_err("[fiq]node disabled, skip\n");
+		return -1;
+	}
+
+        /*coverity[secure_coding]*/
+	(void)memset((void *)&g_fiq_ctrl,  0, sizeof(struct fiq_ctrl));
+	g_fiq_ctrl.smem_base_addr = (void *)SHM_FIQ_BASE_ADDR;
+        /*coverity[secure_coding]*/
+	(void)memset(g_fiq_ctrl.smem_base_addr,  0, (unsigned long)SHM_SIZE_CCORE_FIQ);
 	g_fiq_ctrl.sysctrl_base_addr = of_iomap(node, 0);
 	if (!g_fiq_ctrl.sysctrl_base_addr)
 	{

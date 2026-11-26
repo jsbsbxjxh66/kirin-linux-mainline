@@ -543,6 +543,12 @@ s32 socp_logbuffer_dmalloc(struct device_node* dev)
         socp_printf("socp_ind_delay_init:of_property_read_u32_array get size 0x%x!\n", aulDstChan[SOCP_DST_CHAN_CFG_SIZE]);
         size = aulDstChan[SOCP_DST_CHAN_CFG_SIZE];
     }
+    if (NULL == modem_socp_pdev)
+    {
+        socp_printf("socp_logbuffer_dmalloc: modem_socp_pdev is NULL, driver not probed!\n");
+        return BSP_ERROR;
+    }
+
     pucBuf =(u8 *) dma_alloc_coherent(&modem_socp_pdev->dev, (size_t)size, &ulAddress, GFP_KERNEL);
 
     if(BSP_NULL == pucBuf)
@@ -826,6 +832,13 @@ s32 bsp_socp_ind_delay_init(void)
     if(NULL == dev)
     {
         socp_printf("socp_ind_delay_init: Socp dev find failed\n");
+        return BSP_ERROR;
+    }
+
+    /* of_find_compatible_node() ignores status; honour a disabled node. */
+    if (!of_device_is_available(dev))
+    {
+        socp_printf("socp_ind_delay_init: socp node disabled, skip\n");
         return BSP_ERROR;
     }
 

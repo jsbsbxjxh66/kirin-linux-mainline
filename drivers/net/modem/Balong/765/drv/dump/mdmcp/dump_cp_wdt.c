@@ -120,6 +120,12 @@ int bsp_wdt_register_hook(WDT_CORE_ID core_id, void *func)
 
     /*austin 版本上CP的看门狗中断注册在AP,由dump模块负责去存储*/
     node = of_find_compatible_node(NULL, NULL, "hisilicon,watchdog_app");
+    /* of_find_compatible_node() ignores status; honour a disabled node. */
+    if(node && !of_device_is_available(node))
+    {
+        dump_error("watchdog_app node disabled\n");
+        return BSP_ERROR;
+    }
     if(node)
     {
         (void)of_property_read_u32(node, "flag", &flag);
