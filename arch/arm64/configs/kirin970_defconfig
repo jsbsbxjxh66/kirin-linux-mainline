@@ -110,6 +110,10 @@ CONFIG_MODULE_UNLOAD=y
 
 # Block Layer
 CONFIG_BLK_DEV_LOOP=y
+# initramfs/initrd support.  Without CONFIG_BLK_DEV_INITRD the kernel ignores
+# the initrd loaded by GRUB (rdinit/init= never runs) and goes straight to
+# root=; needed for the minimal initramfs and for booting without UFS.
+CONFIG_BLK_DEV_INITRD=y
 CONFIG_BLK_DEV_RAM=y
 CONFIG_BLK_DEV_RAM_SIZE=8192
 CONFIG_BLK_DEV_NBD=y
