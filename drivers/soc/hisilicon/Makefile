@@ -7,6 +7,7 @@ obj-$(CONFIG_HISI_SECS_CTRL)	+= secs_power_ctrl.o
 obj-$(CONFIG_DRMDRIVER)		+= hisi_drmdriver.o
 obj-$(CONFIG_HISI_BB)		+= rdr/
 obj-$(CONFIG_HISI_HW_VOTE)	+= hw_vote.o
+obj-$(CONFIG_HISI_HW_VOTE)	+= hv_clk.o
 obj-$(CONFIG_HISI_DDRC_SEC)	+= hisi_ddr_secprotect.o
 obj-$(CONFIG_HISI_SYSCOUNTER)	+= hisi_syscounter.o
 obj-$(CONFIG_HISI_NOC)		+= noc/

@@ -4,6 +4,18 @@
  */
 
 / {
+	/*
+	 * CPU cluster clocks backed by PMCTRL frequency votes.  The CPU nodes
+	 * in hi3670.dtsi take their clocks from here so the generic
+	 * cpufreq-dt/OPP stack drives PMCTRL directly (the HiKey970-style
+	 * stub-clock mailbox is not implemented by this board's firmware).
+	 */
+	hv_clk: hv-clk {
+		compatible = "hisilicon,hi3670-hv-clk";
+		#clock-cells = <1>;
+		clock-output-names = "little-freq", "big-freq";
+	};
+
 	hw_vote: hw-vote@fff31000 {
 		compatible = "hisi,freq-hw-vote";
 		reg = <0x0 0xfff31000 0x0 0x1000>;

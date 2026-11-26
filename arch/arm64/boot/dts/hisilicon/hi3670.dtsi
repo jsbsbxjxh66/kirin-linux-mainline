@@ -114,7 +114,7 @@
 			device_type = "cpu";
 			reg = <0x0 0x0>;
 			enable-method = "psci";
-			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER0>;
+			clocks = <&hv_clk 0>;
 			operating-points-v2 = <&cluster0_opp>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
@@ -125,7 +125,7 @@
 			device_type = "cpu";
 			reg = <0x0 0x1>;
 			enable-method = "psci";
-			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER0>;
+			clocks = <&hv_clk 0>;
 			operating-points-v2 = <&cluster0_opp>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
@@ -136,7 +136,7 @@
 			device_type = "cpu";
 			reg = <0x0 0x2>;
 			enable-method = "psci";
-			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER0>;
+			clocks = <&hv_clk 0>;
 			operating-points-v2 = <&cluster0_opp>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
@@ -147,7 +147,7 @@
 			device_type = "cpu";
 			reg = <0x0 0x3>;
 			enable-method = "psci";
-			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER0>;
+			clocks = <&hv_clk 0>;
 			operating-points-v2 = <&cluster0_opp>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
@@ -158,7 +158,7 @@
 			device_type = "cpu";
 			reg = <0x0 0x100>;
 			enable-method = "psci";
-			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER1>;
+			clocks = <&hv_clk 1>;
 			operating-points-v2 = <&cluster1_opp>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
@@ -169,7 +169,7 @@
 			device_type = "cpu";
 			reg = <0x0 0x101>;
 			enable-method = "psci";
-			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER1>;
+			clocks = <&hv_clk 1>;
 			operating-points-v2 = <&cluster1_opp>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
@@ -180,7 +180,7 @@
 			device_type = "cpu";
 			reg = <0x0 0x102>;
 			enable-method = "psci";
-			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER1>;
+			clocks = <&hv_clk 1>;
 			operating-points-v2 = <&cluster1_opp>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
@@ -191,7 +191,7 @@
 			device_type = "cpu";
 			reg = <0x0 0x103>;
 			enable-method = "psci";
-			clocks = <&stub_clock HI3670_CLK_STUB_CLUSTER1>;
+			clocks = <&hv_clk 1>;
 			operating-points-v2 = <&cluster1_opp>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;

@@ -2059,16 +2059,22 @@
 &regulator_ip { status = "disabled"; };
 &jpu { status = "disabled"; };
 &smmu_lpae { status = "disabled"; };
-&media1_crg { status = "disabled"; };
+&media1_crg { status = "disabled"; };	/* DPE display clocks */
 &media2_crg { status = "disabled"; };
 &pmctrl { status = "disabled"; };	/* only DPE/ISP used it */
 
 /*
  * Kept enabled although they are not part of the three target devices:
  *   iomcu / iomcu_rst - clock + reset providers for i2c1 (USB Type-C)
- *   mailbox           - LPM3 channel transport used by stub_clock
- *   stub_clock        - CPU OPP clocks referenced by /cpus/cpu@N
+ *   mailbox           - LPM3 channel transport (unused while stub_clock is off)
+ *
+ * stub_clock is deliberately disabled below: its set_rate() sends a mailbox
+ * request to LPM3 and waits for an ACK that this boot chain never gets, so
+ * the TX queue fills and the mailbox core logs "Try increasing
+ * MBOX_TX_QUEUE_LEN" on every cpufreq update.  Without the provider
+ * cpufreq-dt does not register and the CPUs stay at the bootloader rate.
  */
+&stub_clock { status = "disabled"; };
 
 /* ---- audio ------------------------------------------------------------ */
 &asp { status = "disabled"; };
@@ -2117,7 +2123,8 @@
 &{/soc/thermal-zones/gpu-thermal} { status = "disabled"; };
 &{/soc/thermal-zones/modem-thermal} { status = "disabled"; };
 &{/noc@0} { status = "disabled"; };
-&hw_vote { status = "disabled"; };
+/* PMCTRL frequency votes: the CPU DVFS mechanism this board uses. */
+&hw_vote { status = "okay"; };
 &{/syscounter@fff08000} { status = "disabled"; };
 &ddr_secprotect { status = "disabled"; };
 &{/keys} { status = "disabled"; };
