@@ -248,7 +248,7 @@ CONFIG_INPUT_TOUCHSCREEN=y
 # FocalTech FTS is the other COR-AL00 panel variant; this unit's panel
 # carries a Synaptics TCM (corn69130).
 # CONFIG_TOUCHSCREEN_FTS is not set
-CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_SPI=y
+CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_SPI=m
 CONFIG_KEYBOARD_GPIO=y
 
 # Sensors (IOM3 sensorhub: accel/gyro/mag/als reach the AP over the mailbox)
@@ -306,7 +306,6 @@ CONFIG_DMABUF_HEAPS_CMA=y
 CONFIG_DRM=y
 CONFIG_DRM_KMS_HELPER=y
 CONFIG_DRM_FBDEV_EMULATION=y
-CONFIG_DRM_GEM_DMA_HELPER=y
 CONFIG_FB=y
 # CONFIG_DRM_SIMPLEDRM is not set
 CONFIG_FB_SIMPLE=y
@@ -314,9 +313,13 @@ CONFIG_DRM_PANEL=y
 CONFIG_DRM_BRIDGE=y
 CONFIG_DRM_PANEL_BRIDGE=y
 CONFIG_DRM_PANEL_ORIENTATION_QUIRKS=y
-CONFIG_DRM_HISI_DPE=y
-CONFIG_DRM_HISI_DSI=y
-CONFIG_DRM_PANEL_HISI_TD4320=y
+# Display + touch are modules so they can be loaded manually from the
+# initramfs (see rootfs/initramfs-minimal.cpio.gz + /load-display.sh).
+# Load order: drm_client_lib -> drm_dma_helper -> hisi_dpe ->
+# hisi_dpe_dsi -> panel-hisi-td4320 -> synaptics_tcm_spi.
+CONFIG_DRM_HISI_DPE=m
+CONFIG_DRM_HISI_DSI=m
+CONFIG_DRM_PANEL_HISI_TD4320=m
 CONFIG_DRM_PANEL_HISI_FT8719=y
 # Our panels are DRM_PANEL_HISI_* with compatible "hisi,td4320"/"hisi,ft8719".
 # Upstream's DRM_PANEL_BOE_TD4320 ("boe,td4320", Xiaomi Redmi Note 7, 4 lanes

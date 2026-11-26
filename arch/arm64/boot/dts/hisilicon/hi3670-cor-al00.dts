@@ -1722,6 +1722,8 @@
 		 */
 		compatible = "hisi,td4320";
 		reg = <0>;
+		/* Temporarily off while testing the DPE/DSI DRM path. */
+		status = "disabled";
 
 		/*
 		 * Bind the panel to the BL-PWM backlight defined above.  The
@@ -1853,6 +1855,8 @@
 	 * then fetches the touch report layout from the firmware.
 	 */
 	touchscreen@0 {
+		/* Temporarily off while testing the DRM/panel path. */
+		status = "disabled";
 		compatible = "syna,tcm-spi";
 		reg = <0>;				/* cs-gpios[0] = GPIO147 */
 		spi-max-frequency = <10000000>;		/* retail: 0x989680 */
@@ -1984,18 +1988,21 @@
  * Minimal bring-up configuration
  * ===========================================================================
  *
- * Only the display framebuffer, USB and UFS stay enabled; every other
- * peripheral node is switched off so the board comes up with the smallest
- * possible driver set.  What is deliberately kept alive:
+ * The LCD panel (BOE TD4320 via DPE/DSI + BL-PWM backlight), its SPI3
+ * Synaptics TCM touch controller and the i2c4 bias IC are enabled for
+ * panel/touch bring-up; every other peripheral node is switched off so the
+ * board comes up with the smallest possible driver set.  What is kept alive:
  *
  *   /chosen/framebuffer@10600000  simplefb (early display)
  *   usb3_otg_bc (+ usb_phy, bc12), dwc3, i2c1/fusb302  USB Type-C
  *   ufs                                               root filesystem
+ *   dpe + dsi0 + panel + blpwm/backlight              hisi,td4320 LCD
+ *   spi3 (syna,tcm-spi) + i2c4 (rt4801 vsp/vsn)       touch + panel bias
  *
- * Plus the SoC infrastructure those three cannot work without: CPUs/GIC/
- * timer/CCI, the clock-reset and syscon providers (crg_ctrl, crg_rst, pctrl,
- * pmuctrl, sctrl), the GPIO banks and the pinctrl/pinconf blocks.  uart6 is
- * kept because it is the kernel console (stdout-path).
+ * Plus the SoC infrastructure those cannot work without: CPUs/GIC/timer/CCI,
+ * the clock-reset and syscon providers (crg_ctrl, crg_rst, pctrl, pmuctrl,
+ * sctrl, media1_crg for the DPE clocks), the GPIO banks and the pinctrl/
+ * pinconf blocks.  uart6 is kept because it is the kernel console.
  *
  * Everything below is the set of nodes that are turned off.  Delete a line
  * (or the whole block) to bring a device back.
@@ -2043,6 +2050,11 @@
 &dwmmc2 { status = "disabled"; };	/* Wi-Fi SDIO */
 
 /* ---- display stack other than simplefb ------------------------------- */
+/*
+ * Temporarily all off: DPE/DSI/panel/backlight and their clock provider stay
+ * disabled while the rest of the board is tested.  The boot console is
+ * simplefb (kept enabled), so the screen still works.
+ */
 &dpe { status = "disabled"; };
 &dsi0 { status = "disabled"; };
 &blpwm { status = "disabled"; };
@@ -2094,7 +2106,7 @@
 &i2c0 { status = "disabled"; };
 &i2c2 { status = "disabled"; };
 &i2c3 { status = "disabled"; };
-&i2c4 { status = "disabled"; };
+&i2c4 { status = "disabled"; };		/* panel bias IC (rt4801) */
 &i2c6 { status = "disabled"; };
 &dma0 { status = "disabled"; };
 &{/soc/hwspinlock} { status = "disabled"; };
