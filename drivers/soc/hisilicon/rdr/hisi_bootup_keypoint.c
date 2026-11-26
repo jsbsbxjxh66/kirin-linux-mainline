@@ -31,6 +31,28 @@ static u64 g_bootup_keypoint_addr;
 static struct semaphore clear_dfx_sem;
 static u32 fpga_flag;
 
+/*
+ * This driver has no DT node of its own: it piggybacks on the
+ * "hisilicon,hisifb" node to read fpga_flag.  Boards without that node (this
+ * one) must not run the per-stage keypoint bookkeeping nor start the
+ * clear_dfx kthread, which otherwise sits in down() forever.
+ * -1: not looked up yet, 0: absent/disabled, 1: usable.
+ */
+static int keypoint_node_state = -1;
+
+static bool keypoint_enabled(void)
+{
+	struct device_node *np;
+
+	if (keypoint_node_state < 0) {
+		np = of_find_compatible_node(NULL, NULL, "hisilicon,hisifb");
+		keypoint_node_state = (np && of_device_is_available(np)) ? 1 : 0;
+		of_node_put(np);
+	}
+
+	return keypoint_node_state == 1;
+}
+
 /*******************************************************************************
 Function:       set_boot_keypoint
 Description:    set bootup_keypoint, record last_bootup_keypoint,
@@ -40,6 +62,9 @@ Return:         NA
 ********************************************************************************/
 void set_boot_keypoint(u32 value)
 {
+	if (!keypoint_enabled())
+		return;
+
 	if (value < STAGE_KERNEL_BOOTANIM_COMPLETE || value > STAGE_END) {
 		BB_PRINT_ERR("value[%d] is invilad.\n", value);
 		return;
@@ -67,6 +92,9 @@ Return:         the current bootup_keypoint
 u32 get_boot_keypoint(void)
 {
 	u32 value = 0;
+
+	if (!keypoint_enabled())
+		return 0;
 
 	if (fpga_flag == FPGA) {
 		if (!g_bootup_keypoint_addr) {
@@ -132,6 +160,9 @@ Return:         OK:success
 ********************************************************************************/
 static int __init hisi_bootup_keypoint_init(void)
 {
+	if (!keypoint_enabled())
+		return 0;
+
 	sema_init(&clear_dfx_sem, 0);
 	if (IS_ERR(kthread_run(clear_dfx_happen, NULL, "clear_dfx_happen"))) {
 		BB_PRINT_ERR("create thread clear_dfx_happen faild.\n");
@@ -154,18 +185,17 @@ static void bootup_keypoint_addr_init(void)
 	struct device_node *np;
 	u64 bootup_keypoint_addr;
 
-	np = of_find_compatible_node(NULL, NULL, "hisilicon,hisifb");
-	if (!np) {
-		BB_PRINT_ERR("NOT FOUND device node 'hisilicon,hisifb'!\n");
+	if (!keypoint_enabled()) {
+		pr_debug("hisilicon,hisifb node absent/disabled, keypoint disabled\n");
 		return;
 	}
 
-	/* of_find_compatible_node() ignores status; honour a disabled node. */
-	if (!of_device_is_available(np)) {
-		of_node_put(np);
+	np = of_find_compatible_node(NULL, NULL, "hisilicon,hisifb");
+	if (!np)
 		return;
-	}
+
 	ret = of_property_read_u32(np, "fpga_flag", &fpga_flag);
+	of_node_put(np);
 	if (ret) {
 		BB_PRINT_ERR("failed to get fpga_flag resource.\n");
 		return;
