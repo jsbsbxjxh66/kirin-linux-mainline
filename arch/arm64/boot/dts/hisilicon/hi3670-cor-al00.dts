@@ -69,6 +69,13 @@
 
 		simplefb: framebuffer@10600000 {
 			compatible = "simple-framebuffer";
+			/*
+			 * The framebuffer lives in the logo carve-out below.
+			 * simplefb only picks up the region through
+			 * "memory-region" (of_reserved_mem_region_to_resource()),
+			 * "reg" is just the geometry fallback.
+			 */
+			memory-region = <&logo_buf>;
 			reg = <0x0 0x10600000 0x0 0x93eb80>;
 			width = <1080>;
 			height = <2244>;
@@ -713,9 +720,16 @@
 			linux,cma-default;
 		};
 
-		/* Logo/boot splash buffer */
+		/*
+		 * Logo/boot splash buffer, also the simplefb framebuffer.
+		 * no-map keeps it out of the linear map so simplefb's
+		 * ioremap_wc() is the only mapping (mixing Normal and
+		 * Normal-WC attributes on the same page is UNPREDICTABLE),
+		 * and it keeps the region from being handed out as iomem.
+		 */
 		logo_buf: logo-buffer@10600000 {
 			reg = <0x0 0x10600000 0x0 0x3000000>;
+			no-map;
 		};
 
 		/*
